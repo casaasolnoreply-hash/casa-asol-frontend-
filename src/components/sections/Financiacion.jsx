@@ -1,4 +1,4 @@
-import { PRIMARY } from "../../constants/theme";
+import { PRIMARY, PRIMARY_DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
 
@@ -13,7 +13,9 @@ export default function Financiacion() {
   };
 
   return (
-    <section id="financiacion" style={{ padding: "70px 20px", background: PRIMARY, position: "relative" }}>
+    <section id="financiacion" style={{ padding: "80px 20px", background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)`, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: -100, right: -80, width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,.08)", filter: "blur(10px)", pointerEvents: "none" }} />
+
       <ExpandBtn light onClick={() => setExpandModal({
         title: financiacion.title,
         content: (
@@ -21,13 +23,13 @@ export default function Financiacion() {
             <p style={{ fontSize: 18, color: "#555", lineHeight: 1.85, marginBottom: 32 }}>{financiacion.desc}</p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 32, justifyContent: "center" }}>
               {financiacion.amounts.map((a) => (
-                <button key={a} style={{ padding: "16px 32px", background: "#fff", color: PRIMARY, border: `2px solid ${PRIMARY}`, borderRadius: 6, fontSize: 18, fontWeight: 700, cursor: "pointer" }}>{a}</button>
+                <button key={a} style={{ padding: "16px 32px", background: "#fff", color: PRIMARY, border: `2px solid ${PRIMARY}`, borderRadius: 999, fontSize: 18, fontWeight: 700, cursor: "pointer" }}>{a}</button>
               ))}
             </div>
             <div style={{ textAlign: "center" }}>
               <button
                 onClick={openDoc}
-                style={{ padding: "16px 48px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 18, fontWeight: 700, cursor: financiacion.docUrl ? "pointer" : "default", opacity: financiacion.docUrl ? 1 : .6 }}
+                style={{ padding: "16px 48px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 999, fontSize: 18, fontWeight: 700, cursor: financiacion.docUrl ? "pointer" : "default", opacity: financiacion.docUrl ? 1 : .6 }}
               >
                 {financiacion.btnText}
               </button>
@@ -39,17 +41,20 @@ export default function Financiacion() {
         ),
       })} />
 
-      <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", color: "#fff" }}>
-        <p style={{ fontWeight: 700, fontSize: 13, letterSpacing: 2, marginBottom: 8, opacity: .85 }}>{financiacion.supertitle}</p>
-        <h2 style={{ fontSize: 30, fontWeight: 700, marginBottom: 16 }}>{financiacion.title}</h2>
-        <p style={{ opacity: .9, lineHeight: 1.8, marginBottom: 36, fontSize: 16 }}>{financiacion.desc}</p>
+      <div style={{ position: "relative", maxWidth: 800, margin: "0 auto", textAlign: "center", color: "#fff" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,.15)", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />
+          {financiacion.supertitle}
+        </span>
+        <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "18px 0 16px", letterSpacing: -.4 }}>{financiacion.title}</h2>
+        <p style={{ opacity: .92, lineHeight: 1.8, marginBottom: 36, fontSize: 15.5 }}>{financiacion.desc}</p>
 
-        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 36 }}>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 36 }}>
           {financiacion.amounts.map((amt) => (
             <button key={amt}
-              style={{ padding: "12px 24px", background: "rgba(255,255,255,.15)", color: "#fff", border: "2px solid rgba(255,255,255,.5)", borderRadius: 4, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
-              onMouseEnter={(e) => { e.target.style.background = "#fff"; e.target.style.color = PRIMARY; }}
-              onMouseLeave={(e) => { e.target.style.background = "rgba(255,255,255,.15)"; e.target.style.color = "#fff"; }}>
+              style={{ padding: "12px 26px", background: "rgba(255,255,255,.14)", color: "#fff", border: "1.5px solid rgba(255,255,255,.4)", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "background .2s, color .2s" }}
+              onMouseEnter={(e) => { e.target.style.background = "#fff"; e.target.style.color = PRIMARY_DARK; }}
+              onMouseLeave={(e) => { e.target.style.background = "rgba(255,255,255,.14)"; e.target.style.color = "#fff"; }}>
               {amt}
             </button>
           ))}
@@ -57,7 +62,7 @@ export default function Financiacion() {
 
         <button
           onClick={openDoc}
-          style={{ padding: "14px 48px", background: "#fff", color: PRIMARY, border: "none", borderRadius: 4, fontSize: 15, fontWeight: 700, cursor: financiacion.docUrl ? "pointer" : "default", letterSpacing: .5, opacity: financiacion.docUrl ? 1 : .75 }}
+          style={{ padding: "14px 48px", background: "#fff", color: PRIMARY_DARK, border: "none", borderRadius: 999, fontSize: 14.5, fontWeight: 700, cursor: financiacion.docUrl ? "pointer" : "default", letterSpacing: .3, opacity: financiacion.docUrl ? 1 : .75, boxShadow: "0 14px 30px rgba(0,0,0,.18)" }}
           onMouseEnter={(e) => { if (financiacion.docUrl) e.currentTarget.style.background = "#f0f8ff"; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}
         >

@@ -1,5 +1,8 @@
+import { PRIMARY } from "../../../constants/theme";
 import { useApp } from "../../../context/AppContext";
 import ImageUpload from "../ImageUpload";
+import AddImageBtn from "../AddImageBtn";
+import Icon from "../../ui/Icon";
 
 function Card({ title, desc, children }) {
   return (
@@ -13,7 +16,8 @@ function Card({ title, desc, children }) {
 }
 
 export default function ImagesTab() {
-  const { content, upC } = useApp();
+  const { content, upC, addHeroImage, removeHeroImage } = useApp();
+  const heroImages = content.hero.images?.length ? content.hero.images : (content.hero.bgUrl ? [content.hero.bgUrl] : []);
 
   return (
     <div>
@@ -46,20 +50,33 @@ export default function ImagesTab() {
         </div>
       </Card>
 
-      {/* Hero background */}
-      <Card title="Imagen de fondo — Hero" desc="Aparece como fondo de la sección principal (Hero) del sitio.">
-        <ImageUpload
-          label="SUBIR IMAGEN"
-          currentUrl={content.hero.bgUrl}
-          onUpload={(url) => upC("hero", "bgUrl", url || "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1400")}
-        />
-        <div style={{ marginTop: 12 }}>
-          <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 }}>O PEGA UNA URL</label>
+      {/* Hero — galería rotativa */}
+      <Card title="Imágenes — Hero" desc="Aparecen en la sección principal (Hero) del sitio. Si agregas más de una, van rotando automáticamente.">
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 12 }}>
+          {heroImages.map((img, idx) => (
+            <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+              <img src={img} alt="" style={{ width: 96, height: 68, objectFit: "cover", borderRadius: 8, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
+              <button
+                onClick={() => removeHeroImage(idx)}
+                style={{ position: "absolute", top: -8, right: -8, width: 20, height: 20, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+              >
+                <Icon name="x" size={10} />
+              </button>
+            </div>
+          ))}
+          <AddImageBtn onAdd={addHeroImage} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 }}>O PEGA UNA URL Y PRESIONA ENTER</label>
           <input
-            value={content.hero.bgUrl}
-            onChange={(e) => upC("hero", "bgUrl", e.target.value)}
             placeholder="https://…"
             style={{ width: "100%", padding: "8px 12px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && e.target.value.trim()) {
+                addHeroImage(e.target.value.trim());
+                e.target.value = "";
+              }
+            }}
           />
         </div>
       </Card>

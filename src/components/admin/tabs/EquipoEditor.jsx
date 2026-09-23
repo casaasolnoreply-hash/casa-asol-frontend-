@@ -3,6 +3,7 @@ import { PRIMARY } from "../../../constants/theme";
 import { useApp } from "../../../context/AppContext";
 import Icon from "../../ui/Icon";
 import AddItemModal from "../../ui/AddItemModal";
+import AddImageBtn from "../AddImageBtn";
 import ImageUpload from "../ImageUpload";
 
 const L = { display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 };
@@ -24,7 +25,9 @@ function MemberPreview({ m }) {
   );
 }
 
-function MemberItem({ m, onUpdate, onRemove }) {
+function MemberItem({ m, onUpdate, onRemove, onAddPhoto, onRemovePhoto }) {
+  const photos = m.photos || [];
+
   return (
     <div style={{ background: "#fff", border: "1px solid #e0e8f0", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,.05)" }}>
       {/* Header */}
@@ -75,18 +78,47 @@ function MemberItem({ m, onUpdate, onRemove }) {
           </div>
 
           {/* Role */}
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 18 }}>
             <label style={L}>ROL / CARGO</label>
             <input value={m.role} onChange={(e) => onUpdate("role", e.target.value)} placeholder="Descripción del rol" style={I} />
           </div>
 
-          {/* Photo */}
+          {/* Foto de perfil — la que aparece en el círculo del avatar */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ ...L, marginBottom: 8 }}>FOTO DE PERFIL — se muestra en el círculo del avatar</label>
+            <ImageUpload currentUrl={m.photoUrl || ""} onUpload={(url) => onUpdate("photoUrl", url)} />
+            {!m.photoUrl && (
+              <p style={{ fontSize: 10, color: "#b0b8c8", margin: "-8px 0 0" }}>
+                Se mostrarán las iniciales hasta que subas una foto de perfil
+              </p>
+            )}
+          </div>
+
+          {/* Galería de labor / actividades — NO es el avatar */}
           <div>
-            <label style={L}>FOTO DE PERFIL</label>
-            <ImageUpload
-              currentUrl={m.photoUrl || ""}
-              onUpload={(url) => onUpdate("photoUrl", url)}
-            />
+            <label style={{ ...L, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+              FOTOS DE SU LABOR
+              <span style={{ background: photos.length ? PRIMARY : "#e0e0e0", color: photos.length ? "#fff" : "#999", borderRadius: 10, padding: "0 7px", fontSize: 10, fontWeight: 700 }}>
+                {photos.length}
+              </span>
+            </label>
+            <p style={{ fontSize: 10, color: "#9ca3af", margin: "-4px 0 8px" }}>
+              Fotos de lo que hace en su rol (no son la foto de perfil) — se ven al abrir su tarjeta en el sitio
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+              {photos.map((img, idx) => (
+                <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                  <img src={img} alt="" style={{ width: 68, height: 52, objectFit: "cover", borderRadius: 6, border: "2px solid #e0e0e0", display: "block" }} />
+                  <button
+                    onClick={() => onRemovePhoto(idx)}
+                    style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                  >
+                    <Icon name="x" size={9} />
+                  </button>
+                </div>
+              ))}
+              <AddImageBtn onAdd={onAddPhoto} />
+            </div>
           </div>
         </div>
       </div>
@@ -95,7 +127,7 @@ function MemberItem({ m, onUpdate, onRemove }) {
 }
 
 export default function EquipoEditor() {
-  const { team, upTeam, removeTeam, addTeamMember } = useApp();
+  const { team, upTeam, removeTeam, addTeamMember, addTeamPhoto, removeTeamPhoto } = useApp();
   const [addModal, setAddModal] = useState(false);
 
   return (
@@ -122,6 +154,7 @@ export default function EquipoEditor() {
             { key: "initials", label: "INICIALES (máx. 3)", type: "text", placeholder: "AB" },
             { key: "name",     label: "NOMBRE COMPLETO",    type: "text", placeholder: "Nombre completo" },
             { key: "role",     label: "ROL / CARGO",        type: "text", placeholder: "Descripción del rol" },
+            { key: "photoUrl", label: "FOTO DE PERFIL (OPCIONAL — si no la agregas, se muestran las iniciales)", type: "image" },
           ]}
           onSave={(d) => addTeamMember({ ...d, initials: d.initials.toUpperCase().slice(0, 3) })}
           onClose={() => setAddModal(false)}
@@ -142,6 +175,8 @@ export default function EquipoEditor() {
             m={m}
             onUpdate={(f, v) => upTeam(m.id, f, v)}
             onRemove={() => removeTeam(m.id)}
+            onAddPhoto={(url) => addTeamPhoto(m.id, url)}
+            onRemovePhoto={(idx) => removeTeamPhoto(m.id, idx)}
           />
         ))}
       </div>

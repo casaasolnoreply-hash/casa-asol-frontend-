@@ -1,4 +1,4 @@
-import { PRIMARY, DARK } from "../../constants/theme";
+import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 
 export default function Footer() {
@@ -6,8 +6,8 @@ export default function Footer() {
   const logoUrl = content.brand?.logoUrl;
 
   return (
-    <footer style={{ background: DARK, color: "#ccc", padding: "40px 20px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 32 }}>
+    <footer style={{ background: DARK, color: "#a8b1bf", padding: "52px 20px 0" }}>
+      <div className="ca-footer-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr", gap: 32, paddingBottom: 40 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             {logoUrl
@@ -21,34 +21,48 @@ export default function Footer() {
                 </>
             }
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.8, color: "#aaa" }}>{content.footer.desc}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.85, color: "#8a93a3", maxWidth: 280 }}>{content.footer.desc}</p>
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 13, letterSpacing: 1, marginBottom: 14 }}>LA CASA</p>
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>LA CASA</p>
           {["El Equipo", "Historia", "Programa"].map((l) => (
-            <p key={l} style={{ margin: "0 0 8px" }}>
-              <a href="#" style={{ color: "#aaa", textDecoration: "none", fontSize: 13 }}>{l}</a>
+            <p key={l} style={{ margin: "0 0 10px" }}>
+              <a href="#" style={{ color: "#8a93a3", textDecoration: "none", fontSize: 13.5, transition: "color .15s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = PRIMARY_LIGHT)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#8a93a3")}>
+                {l}
+              </a>
             </p>
           ))}
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 13, letterSpacing: 1, marginBottom: 14 }}>AYUDAR</p>
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>AYUDAR</p>
           {["Financiación", "Voluntariado"].map((l) => (
-            <p key={l} style={{ margin: "0 0 8px" }}>
-              <a href="#" style={{ color: "#aaa", textDecoration: "none", fontSize: 13 }}>{l}</a>
+            <p key={l} style={{ margin: "0 0 10px" }}>
+              <a href="#" style={{ color: "#8a93a3", textDecoration: "none", fontSize: 13.5, transition: "color .15s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = PRIMARY_LIGHT)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#8a93a3")}>
+                {l}
+              </a>
             </p>
           ))}
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 13, letterSpacing: 1, marginBottom: 14 }}>CONTACTO</p>
-          <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.8 }}>
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>CONTACTO</p>
+          <p style={{ fontSize: 13.5, color: "#8a93a3", lineHeight: 1.9 }}>
             {content.topbar.address}<br />{content.topbar.phone}
           </p>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #333", marginTop: 32, paddingTop: 20, textAlign: "center", fontSize: 12, color: "#666" }}>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", padding: "20px 0", textAlign: "center", fontSize: 12, color: "#697280" }}>
         © {new Date().getFullYear()} Casa Estudiantil ASOL. Todos los derechos reservados.
       </div>
+
+      <style>{`
+        @media (max-width: 760px) {
+          .ca-footer-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+      `}</style>
     </footer>
   );
 }

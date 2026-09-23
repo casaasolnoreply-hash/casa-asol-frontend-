@@ -5,7 +5,6 @@ import Field from "../../ui/Field";
 import Icon from "../../ui/Icon";
 import IconPicker from "../../ui/IconPicker";
 import AddItemModal from "../../ui/AddItemModal";
-import ImageUpload from "../ImageUpload";
 import AddImageBtn from "../AddImageBtn";
 
 const inp = { width: "100%", padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" };
@@ -66,10 +65,13 @@ export default function ContentTab({ initialSub = "hero" }) {
     content, upC, navItems,
     upAmt, removeAmt, addAmt,
     upVol, removeVol, addVol,
+    addVolImage, removeVolImage,
     upContact, addContactItem, removeContactItem,
     addHistoriaParagraph, removeHistoriaParagraph, upHistoriaParagraph,
+    addHistoriaImage, removeHistoriaImage,
     addDonacionImage, removeDonacionImage,
     addHeroButton, removeHeroButton, upHeroButton,
+    addHeroImage, removeHeroImage,
   } = useApp();
 
   const paragraphs = content.historia.paragraphs?.length
@@ -77,6 +79,8 @@ export default function ContentTab({ initialSub = "hero" }) {
     : [content.historia.text1, content.historia.text2].filter(Boolean);
 
   const heroButtons = content.hero.buttons || [];
+  const heroImages = content.hero.images?.length ? content.hero.images : (content.hero.bgUrl ? [content.hero.bgUrl] : []);
+  const historiaImages = content.historia.images?.length ? content.historia.images : (content.historia.imageUrl ? [content.historia.imageUrl] : []);
 
   return (
     <div>
@@ -107,7 +111,49 @@ export default function ContentTab({ initialSub = "hero" }) {
       {sub === "hero" && <>
         <Field label="TÍTULO PRINCIPAL" value={content.hero.title}    onChange={(v) => upC("hero", "title", v)} />
         <Field label="SUBTÍTULO"        value={content.hero.subtitle}  onChange={(v) => upC("hero", "subtitle", v)} textarea />
-        <Field label="URL IMAGEN FONDO" value={content.hero.bgUrl}     onChange={(v) => upC("hero", "bgUrl", v)} />
+
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>IMÁGENES DE PORTADA</p>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#9ca3af" }}>
+            Si agregas más de una, van rotando automáticamente en el hero del sitio público.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
+            {heroImages.map((img, idx) => (
+              <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                <img src={img} alt="" style={{ width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
+                <button
+                  onClick={() => removeHeroImage(idx)}
+                  style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                >
+                  <Icon name="x" size={9} />
+                </button>
+              </div>
+            ))}
+            <AddImageBtn onAdd={addHeroImage} />
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              placeholder="O pega una URL de imagen aquí y pulsa +"
+              id="hero-url-inp"
+              style={{ flex: 1, padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 12, fontFamily: "inherit" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.target.value.trim()) {
+                  addHeroImage(e.target.value.trim());
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById("hero-url-inp");
+                if (el?.value.trim()) { addHeroImage(el.value.trim()); el.value = ""; }
+              }}
+              style={{ padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+            >
+              <Icon name="plus" size={13} /> Agregar
+            </button>
+          </div>
+        </div>
 
         {/* ── Botones dinámicos ── */}
         <div style={{ marginBottom: 16 }}>
@@ -205,11 +251,45 @@ export default function ContentTab({ initialSub = "hero" }) {
         <Field label="AUTOR"  value={content.historia.quoteAuthor} onChange={(v) => upC("historia", "quoteAuthor", v)} />
 
         <div style={{ marginTop: 4 }}>
-          <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>IMAGEN DE LA SECCIÓN</p>
-          <ImageUpload currentUrl={content.historia.imageUrl || ""} onUpload={(url) => upC("historia", "imageUrl", url)} />
-          <div style={{ marginTop: -6 }}>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 }}>O PEGA UNA URL</label>
-            <input value={content.historia.imageUrl || ""} onChange={(e) => upC("historia", "imageUrl", e.target.value)} placeholder="https://…" style={inp} />
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>IMÁGENES DE LA SECCIÓN</p>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#9ca3af" }}>
+            Si agregas más de una, van rotando automáticamente junto a la historia.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
+            {historiaImages.map((img, idx) => (
+              <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                <img src={img} alt="" style={{ width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
+                <button
+                  onClick={() => removeHistoriaImage(idx)}
+                  style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                >
+                  <Icon name="x" size={9} />
+                </button>
+              </div>
+            ))}
+            <AddImageBtn onAdd={addHistoriaImage} />
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              placeholder="O pega una URL de imagen aquí y pulsa +"
+              id="historia-url-inp"
+              style={{ flex: 1, padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 12, fontFamily: "inherit" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.target.value.trim()) {
+                  addHistoriaImage(e.target.value.trim());
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById("historia-url-inp");
+                if (el?.value.trim()) { addHistoriaImage(el.value.trim()); el.value = ""; }
+              }}
+              style={{ padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+            >
+              <Icon name="plus" size={13} /> Agregar
+            </button>
           </div>
         </div>
 
@@ -340,6 +420,49 @@ export default function ContentTab({ initialSub = "hero" }) {
               <button onClick={() => removeVol(i)} style={btnD}><Icon name="trash" size={11} /></button>
             </div>
           ))}
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>IMÁGENES DE LA SECCIÓN</p>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#9ca3af" }}>
+            Si agregas más de una, van rotando automáticamente junto a la información de voluntariado.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
+            {(content.voluntariado.images || []).map((img, idx) => (
+              <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                <img src={img} alt="" style={{ width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
+                <button
+                  onClick={() => removeVolImage(idx)}
+                  style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                >
+                  <Icon name="x" size={9} />
+                </button>
+              </div>
+            ))}
+            <AddImageBtn onAdd={addVolImage} />
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              placeholder="O pega una URL de imagen aquí y pulsa +"
+              id="vol-url-inp"
+              style={{ flex: 1, padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 12, fontFamily: "inherit" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.target.value.trim()) {
+                  addVolImage(e.target.value.trim());
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById("vol-url-inp");
+                if (el?.value.trim()) { addVolImage(el.value.trim()); el.value = ""; }
+              }}
+              style={{ padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+            >
+              <Icon name="plus" size={13} /> Agregar
+            </button>
+          </div>
         </div>
 
         <div style={{ background: "#f9fafb", border: "1px solid #e0e0e0", borderRadius: 8, padding: "14px 16px" }}>

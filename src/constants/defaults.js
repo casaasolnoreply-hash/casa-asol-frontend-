@@ -9,7 +9,8 @@ export const DEFAULT_CONTENT = {
     instagram: "",
   },
   hero: {
-    bgUrl: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1400",
+    bgUrl: "",
+    images: [],
     title: "CASA ESTUDIANTIL ASOL",
     subtitle: "Oportunidades y protección para los niños frente a desventaja y violencia.",
     btn1Text: "CONOCER MÁS",
@@ -31,6 +32,7 @@ export const DEFAULT_CONTENT = {
     quote: "Cada niño que llega a ASOL trae consigo una historia de resiliencia. Nuestro trabajo es asegurarnos de que esa historia tenga un final brillante.",
     quoteAuthor: "— Fundadora, Casa ASOL",
     imageUrl: "",
+    images: [],
   },
   financiacion: {
     supertitle: "AYUDAR Y DONAR",
@@ -54,6 +56,7 @@ export const DEFAULT_CONTENT = {
       "Asistencia administrativa y comunicación",
     ],
     btnText: "QUIERO VOLUNTARIAR",
+    images: [],
   },
   contacto: {
     supertitle: "CONTACTO",
@@ -85,10 +88,10 @@ export const DEFAULT_PROGRAMA = [
 ];
 
 export const DEFAULT_TEAM = [
-  { id: 1, initials: "DG", name: "Directora General",         role: "Responsable de la visión y gestión de la casa" },
-  { id: 2, initials: "CP", name: "Coordinadora Pedagógica",   role: "Diseño y seguimiento de programas educativos" },
-  { id: 3, initials: "TS", name: "Trabajadora Social",        role: "Acompañamiento a familias en situación vulnerable" },
-  { id: 4, initials: "PC", name: "Psicóloga Clínica",         role: "Apoyo emocional y terapéutico a los estudiantes" },
+  { id: 1, initials: "DG", name: "Directora General",         role: "Responsable de la visión y gestión de la casa", photos: [] },
+  { id: 2, initials: "CP", name: "Coordinadora Pedagógica",   role: "Diseño y seguimiento de programas educativos", photos: [] },
+  { id: 3, initials: "TS", name: "Trabajadora Social",        role: "Acompañamiento a familias en situación vulnerable", photos: [] },
+  { id: 4, initials: "PC", name: "Psicóloga Clínica",         role: "Apoyo emocional y terapéutico a los estudiantes", photos: [] },
 ];
 
 export const DEFAULT_NAV = [

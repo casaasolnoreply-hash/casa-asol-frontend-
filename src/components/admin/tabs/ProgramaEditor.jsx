@@ -6,6 +6,7 @@ import Icon from "../../ui/Icon";
 import IconPicker from "../../ui/IconPicker";
 import AddItemModal from "../../ui/AddItemModal";
 import AddImageBtn from "../AddImageBtn";
+import ImageUpload from "../ImageUpload";
 
 const L = { display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 };
 const I = { width: "100%", padding: "8px 10px", border: "1.5px solid #e0e0e0", borderRadius: 6, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" };
@@ -90,31 +91,40 @@ function ProgramItem({ p, onUpdate, onRemove, onAddImage, onRemoveImage }) {
           {/* Image gallery */}
           <div>
             <label style={{ ...L, display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-              IMÁGENES
-              <span style={{ background: imgs.length ? PRIMARY : "#e0e0e0", color: imgs.length ? "#fff" : "#999", borderRadius: 10, padding: "0 7px", fontSize: 10, fontWeight: 700 }}>
-                {imgs.length}
-              </span>
-              <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400, letterSpacing: 0 }}>
-                — la primera se muestra como portada
-              </span>
+              {imgs.length === 0 ? "FOTO DEL PROGRAMA" : "IMÁGENES"}
+              {imgs.length > 0 && (
+                <span style={{ background: PRIMARY, color: "#fff", borderRadius: 10, padding: "0 7px", fontSize: 10, fontWeight: 700 }}>
+                  {imgs.length}
+                </span>
+              )}
+              {imgs.length > 1 && (
+                <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400, letterSpacing: 0 }}>
+                  — la primera se muestra como portada, si hay más de una rotan en el sitio
+                </span>
+              )}
             </label>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-              {imgs.map((img, idx) => (
-                <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
-                  <img src={img} alt="" style={{ width: 68, height: 52, objectFit: "cover", borderRadius: 6, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
-                  <button
-                    onClick={() => onRemoveImage(idx)}
-                    style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
-                  >
-                    <Icon name="x" size={9} />
-                  </button>
-                  {idx === 0 && imgs.length > 1 && (
-                    <span style={{ position: "absolute", bottom: 2, left: 2, background: PRIMARY, color: "#fff", fontSize: 8, padding: "1px 4px", borderRadius: 2 }}>1ª</span>
-                  )}
-                </div>
-              ))}
-              <AddImageBtn onAdd={onAddImage} />
-            </div>
+
+            {imgs.length === 0 ? (
+              <ImageUpload currentUrl="" onUpload={(url) => { if (url) onAddImage(url); }} />
+            ) : (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+                {imgs.map((img, idx) => (
+                  <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                    <img src={img} alt="" style={{ width: 68, height: 52, objectFit: "cover", borderRadius: 6, border: `2px solid ${idx === 0 ? PRIMARY : "#e0e0e0"}`, display: "block" }} />
+                    <button
+                      onClick={() => onRemoveImage(idx)}
+                      style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                    >
+                      <Icon name="x" size={9} />
+                    </button>
+                    {idx === 0 && imgs.length > 1 && (
+                      <span style={{ position: "absolute", bottom: 2, left: 2, background: PRIMARY, color: "#fff", fontSize: 8, padding: "1px 4px", borderRadius: 2 }}>1ª</span>
+                    )}
+                  </div>
+                ))}
+                <AddImageBtn onAdd={onAddImage} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -150,8 +160,9 @@ export default function ProgramaEditor() {
             { key: "icon",  label: "ÍCONO",       type: "icon",     default: "star" },
             { key: "title", label: "NOMBRE",       type: "text",     placeholder: "Nombre del programa" },
             { key: "desc",  label: "DESCRIPCIÓN",  type: "textarea", placeholder: "Descripción breve del programa…" },
+            { key: "photo", label: "FOTO (OPCIONAL — si no la agregas, se muestra el ícono)", type: "image" },
           ]}
-          onSave={(d) => addProg({ ...d, images: [] })}
+          onSave={({ photo, ...d }) => addProg({ ...d, images: photo ? [photo] : [] })}
           onClose={() => setAddModal(false)}
         />
       )}

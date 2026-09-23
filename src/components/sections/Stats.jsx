@@ -1,33 +1,44 @@
-import { PRIMARY } from "../../constants/theme";
+import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
+import Icon from "../ui/Icon";
+
+const TILE_ICONS = ["users", "home", "book", "star"];
 
 export default function Stats() {
   const { stats, isSectionVisible, setExpandModal } = useApp();
   if (!isSectionVisible("stats")) return null;
 
   return (
-    <section style={{ background: PRIMARY, padding: "40px 20px", position: "relative" }}>
-      <ExpandBtn light onClick={() => setExpandModal({
-        title: "Estadísticas",
-        content: (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 36, textAlign: "center", padding: "16px 0" }}>
-            {stats.map((s) => (
-              <div key={s.id}>
-                <div style={{ fontSize: 72, fontWeight: 800, color: PRIMARY }}>{s.value}</div>
-                <div style={{ fontSize: 20, color: "#444", marginTop: 10 }}>{s.label}</div>
+    <section style={{ padding: "0 20px", position: "relative", marginTop: -64, marginBottom: 40 }}>
+      <div style={{ position: "relative", maxWidth: 1000, margin: "0 auto", background: "#fff", borderRadius: 20, boxShadow: "0 20px 50px rgba(15,64,140,.14)", border: "1px solid #eef2f7", padding: "30px 28px" }}>
+        <ExpandBtn onClick={() => setExpandModal({
+          title: "Estadísticas",
+          content: (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 36, textAlign: "center", padding: "16px 0" }}>
+              {stats.map((s) => (
+                <div key={s.id}>
+                  <div style={{ fontSize: 72, fontWeight: 800, color: PRIMARY }}>{s.value}</div>
+                  <div style={{ fontSize: 20, color: "#444", marginTop: 10 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          ),
+        })} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 18 }}>
+          {stats.map((s, i) => (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px" }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: PRIMARY_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon name={TILE_ICONS[i % TILE_ICONS.length]} size={19} color={PRIMARY} />
               </div>
-            ))}
-          </div>
-        ),
-      })} />
-      <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 24, textAlign: "center" }}>
-        {stats.map((s) => (
-          <div key={s.id}>
-            <div style={{ fontSize: 36, fontWeight: 800, color: "#fff" }}>{s.value}</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,.85)", marginTop: 4 }}>{s.label}</div>
-          </div>
-        ))}
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: DARK, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 12, color: "#8a93a3", marginTop: 3 }}>{s.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

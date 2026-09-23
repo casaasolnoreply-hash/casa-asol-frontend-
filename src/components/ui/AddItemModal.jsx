@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PRIMARY } from "../../constants/theme";
 import Icon from "./Icon";
 import IconPicker from "./IconPicker";
+import ImageUpload from "../admin/ImageUpload";
 
 export default function AddItemModal({ title, fields = [], onSave, onClose }) {
   const [data, setData] = useState(() => {
@@ -56,6 +57,11 @@ export default function AddItemModal({ title, fields = [], onSave, onClose }) {
           <div key={f.key} style={{ marginBottom: f.type === "icon" ? 0 : 18 }}>
             {f.type === "icon" ? (
               <IconPicker label={f.label} value={data[f.key]} onChange={(v) => set(f.key, v)} />
+            ) : f.type === "image" ? (
+              <>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: .5 }}>{f.label}</label>
+                <ImageUpload currentUrl={data[f.key]} onUpload={(url) => set(f.key, url)} />
+              </>
             ) : f.type === "textarea" ? (
               <>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: .5 }}>{f.label}</label>

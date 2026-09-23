@@ -190,6 +190,10 @@ export function AppProvider({ children }) {
   const addVol = (val = "") =>
     setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, list: [...c.voluntariado.list, val] } }));
 
+  /* ── Voluntariado: galería rotativa ── */
+  const addVolImage    = (url) => setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, images: [...(c.voluntariado.images || []), url] } }));
+  const removeVolImage = (idx) => setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, images: (c.voluntariado.images || []).filter((_, i) => i !== idx) } }));
+
   const upContact = (i, field, val) =>
     setContent((c) => ({ ...c, contacto: { ...c.contacto, items: c.contacto.items.map((x, j) => j === i ? { ...x, [field]: val } : x) } }));
   const addContactItem = (item = {}) =>
@@ -205,11 +209,21 @@ export function AppProvider({ children }) {
   const removeHistoriaParagraph = (idx)  => setContent((c) => ({ ...c, historia: { ...c.historia, paragraphs: _getParas(c.historia).filter((_, i) => i !== idx) } }));
   const upHistoriaParagraph     = (idx, val) => setContent((c) => ({ ...c, historia: { ...c.historia, paragraphs: _getParas(c.historia).map((p, i) => i === idx ? val : p) } }));
 
+  /* ── Historia: galería rotativa (con compatibilidad hacia el antiguo imageUrl único) ── */
+  const _getHistoriaImages  = (h) => h.images?.length ? h.images : (h.imageUrl ? [h.imageUrl] : []);
+  const addHistoriaImage    = (url) => setContent((c) => ({ ...c, historia: { ...c.historia, images: [..._getHistoriaImages(c.historia), url] } }));
+  const removeHistoriaImage = (idx) => setContent((c) => ({ ...c, historia: { ...c.historia, images: _getHistoriaImages(c.historia).filter((_, i) => i !== idx) } }));
+
   /* ── Hero buttons ── */
   const _getButtons = (h) => h.buttons || [];
   const addHeroButton    = ()           => setContent((c) => ({ ...c, hero: { ...c.hero, buttons: [..._getButtons(c.hero), { text: "NUEVO BOTÓN", href: "#home", style: "primary" }] } }));
   const removeHeroButton = (idx)        => setContent((c) => ({ ...c, hero: { ...c.hero, buttons: _getButtons(c.hero).filter((_, i) => i !== idx) } }));
   const upHeroButton     = (idx, f, v)  => setContent((c) => ({ ...c, hero: { ...c.hero, buttons: _getButtons(c.hero).map((b, i) => i === idx ? { ...b, [f]: v } : b) } }));
+
+  /* ── Hero: galería rotativa (con compatibilidad hacia el antiguo bgUrl único) ── */
+  const _getHeroImages  = (h) => h.images?.length ? h.images : (h.bgUrl ? [h.bgUrl] : []);
+  const addHeroImage    = (url) => setContent((c) => ({ ...c, hero: { ...c.hero, images: [..._getHeroImages(c.hero), url] } }));
+  const removeHeroImage = (idx) => setContent((c) => ({ ...c, hero: { ...c.hero, images: _getHeroImages(c.hero).filter((_, i) => i !== idx) } }));
 
   /* ── Stats ── */
   const upStat     = (id, f, v) => setStats((s) => s.map((x) => x.id === id ? { ...x, [f]: v } : x));
@@ -226,7 +240,13 @@ export function AppProvider({ children }) {
   /* ── Equipo ── */
   const upTeam        = (id, f, v) => setTeam((t) => t.map((x) => x.id === id ? { ...x, [f]: v } : x));
   const removeTeam    = (id)       => setTeam((t) => t.filter((x) => x.id !== id));
-  const addTeamMember = (d = {})   => setTeam((t) => [...t, { id: Date.now(), initials: "NM", name: "Nuevo Miembro", role: "Descripción del rol", photoUrl: "", ...d }]);
+  const addTeamMember = (d = {})   => setTeam((t) => [...t, { id: Date.now(), initials: "NM", name: "Nuevo Miembro", role: "Descripción del rol", photoUrl: "", photos: [], ...d }]);
+
+  /* ── Equipo: galería de "labor" / actividades por miembro ──
+     Distinta de photoUrl (la foto de perfil única que se usa en el círculo del avatar):
+     estas fotos muestran lo que la persona hace en su rol y se ven al expandir su tarjeta. */
+  const addTeamPhoto    = (id, url) => setTeam((t) => t.map((x) => x.id === id ? { ...x, photos: [...(x.photos || []), url] } : x));
+  const removeTeamPhoto = (id, idx) => setTeam((t) => t.map((x) => x.id === id ? { ...x, photos: (x.photos || []).filter((_, i) => i !== idx) } : x));
 
   /* ── Nav ── */
   const toggleNav   = (id)          => setNavItems((n) => n.map((x) => x.id === id ? { ...x, enabled: !x.enabled } : x));
@@ -272,13 +292,16 @@ export function AppProvider({ children }) {
       login, logout, uploadImage,
       scrollTo, isSectionVisible,
       upC, upAmt, removeAmt, addAmt, upVol, removeVol, addVol,
+      addVolImage, removeVolImage,
       upContact, addContactItem, removeContactItem,
       addHistoriaParagraph, removeHistoriaParagraph, upHistoriaParagraph,
+      addHistoriaImage, removeHistoriaImage,
       addHeroButton, removeHeroButton, upHeroButton,
+      addHeroImage, removeHeroImage,
       addDonacionImage, removeDonacionImage,
       upStat, removeStat, addStat,
       upProg, removeProg, addProg, addProgImage, removeProgImage,
-      upTeam, removeTeam, addTeamMember,
+      upTeam, removeTeam, addTeamMember, addTeamPhoto, removeTeamPhoto,
       toggleNav, upNavLabel, upNavHref, removeNav, addNavItem,
       toggleSub, upSubLabel, upSubHref, removeSub, addSubItem,
       toggleSection,

@@ -20,6 +20,7 @@ import RolesTab       from "../components/admin/tabs/RolesTab";
 import EstudiantesTab from "../components/admin/tabs/EstudiantesTab";
 import MiInformeTab   from "../components/admin/tabs/MiInformeTab";
 import AttentionsTab  from "../components/admin/tabs/AttentionsTab";
+import DashboardTab   from "../components/admin/tabs/DashboardTab";
 
 /* ── Site content items ── */
 const SITE_TABS = [
@@ -140,8 +141,13 @@ export default function AdminPage() {
   const canViewMessages = isDeveloper || !!authUser?.permissions?.viewMessages;
   // Roles operativos (no admin/desarrollador): tienen su propio informe periódico.
   const isOperationalRole = authUser?.role && authUser.role !== "admin" && !isDeveloper;
+  // Las directoras no llenan su propio informe: reciben y revisan los
+  // de las demás áreas (ver MiInformeTab canManageAllRoles) — su
+  // pantalla de inicio es el panel de KPIs, no "Mi informe".
+  const isDirector = authUser?.role === "directora_tecnica" || authUser?.role === "directora_programatica";
+  const canReviewReports = isDeveloper || authUser?.role === "admin" || isDirector;
 
-  const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canManageUsers ? "usuarios" : isOperationalRole ? "mi-informe" : "inicio";
+  const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canManageUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
   const [tab, setTab]           = useState(defaultTab);
   const [configOpen, setConfigOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -226,7 +232,9 @@ export default function AdminPage() {
       case "estudiantes":  return <EstudiantesTab />;
       case "atenciones":   return <AttentionsTab />;
       case "mi-informe":   return <MiInformeTab />;
-      case "inicio":       return (
+      case "inicio":       return canReviewReports ? (
+        <DashboardTab onGoToReports={() => setTab("mi-informe")} />
+      ) : (
         <div style={{ textAlign: "center", padding: "56px 24px" }}>
           <Icon name="home" size={36} color="#d1d5db" />
           <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>
@@ -291,8 +299,9 @@ export default function AdminPage() {
           <div className="ca-hide-collapsed" style={{ padding: "8px 20px 4px", fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: "rgba(255,255,255,.22)", textTransform: "uppercase" }}>
             General
           </div>
+          {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
           <NavBtn id="estudiantes" icon="users" label="Estudiantes" />
-          {(isOperationalRole || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Expediente de atenciones" />}
+          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Expediente de atenciones" />}
           <NavBtn id="mi-informe" icon="list" label={isOperationalRole ? "Mi informe" : "Informes"} />
 
           {canViewMessages && (

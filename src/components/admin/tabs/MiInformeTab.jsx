@@ -104,12 +104,33 @@ function detectPeriodTypeFromDates(startStr, endStr) {
 // (esperando revisión) o aceptado (final).
 const isEditable = (status) => status === "borrador" || status === "devuelto";
 
+// config.narrativeFields es un árbol de secciones (ver backend
+// reportFields.js) — esto saca todos los campos de texto "hoja" (los
+// que de verdad tienen un textarea) en orden, sin importar cuántos
+// niveles de agrupación tengan encima. Espejo del mismo helper del
+// backend (config/reportFields.js) — no se comparte archivo entre
+// frontend y backend, así que vive duplicado en los dos.
+function flattenNarrativeFields(narrativeFields) {
+  const out = [];
+  const walkFields = (fields) => {
+    for (const f of fields || []) {
+      if (f.fields?.length) walkFields(f.fields);
+      else out.push(f);
+    }
+  };
+  for (const node of narrativeFields || []) {
+    if (node.kind === "intro" || node.kind === "closing") out.push(node);
+    else if (node.kind === "section") walkFields(node.fields);
+  }
+  return out;
+}
+
 // Al editar un borrador, en vez de abrir siempre en el paso 1, se
 // entra directo al primer paso que todavía necesita algo — si ya
 // está todo lleno, va directo a "Revisar y enviar".
 function firstIncompleteStep(config, draft) {
   if (!draft.periodType || !draft.periodStart || !draft.periodEnd) return 0;
-  if (!config.narrativeFields.every((f) => draft.narrative?.[f.key]?.trim())) return 1;
+  if (!flattenNarrativeFields(config.narrativeFields).every((f) => draft.narrative?.[f.key]?.trim())) return 1;
   if (!config.statFields.every((f) => draft.stats?.[f.key] !== undefined)) return 2;
   return 3;
 }
@@ -204,8 +225,6 @@ function cleanStats(config, stats) {
   return cleaned;
 }
 
-const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
 const MONTH_NAMES_UPPER = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
 
 const ORDINAL_FEM = ["PRIMERA", "SEGUNDA", "TERCERA", "CUARTA", "QUINTA"];
@@ -252,69 +271,90 @@ function periodRangeLabel(periodType, periodStart, periodEnd) {
 const splitParagraphs = (text) => (text || "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
 
 // Arma la estructura del documento (Word y PDF comparten esto, solo
-// cambia cómo se dibuja) replicando el diseño real que ya entrega el
-// área — ver "Informe 1 sem psicologia.docx": título, párrafo
-// introductorio sin numerar, secciones numeradas ("1.", "2."...) y al
-// final una tabla de totales con el periodo como encabezado. El código
-// del informe y la fecha de descarga NO forman parte de este diseño.
-// Los números de sección son FIJOS, no correlativos — el documento
-// real salta del "2" al "5" (los tipos de atención sin desarrollo
-// narrativo propio solo llevan su total en la tabla final, no
-// ocupan un número) y no se debe "corregir" ese salto renumerando.
-// Todas las secciones narrativas van con viñetas (•); solo el párrafo
-// introductorio y la conclusión final son párrafo corrido, sin viñeta.
-const SECTION_NUMBERS = { fortalecimiento_equipo: 1, desafios: 5, logros: 6, coordinacion: 7 };
-const DETAIL_SECTION_NUMBER = 2;
-
+// cambia cómo se dibuja) a partir del árbol config.narrativeFields
+// (ver backend reportFields.js) — nada de nombres de campos de un rol
+// en particular codificados acá, todo sale de la configuración.
+//
+// Numeración: cada sección trae "number" fijo (ej. "2.3", tal como
+// tutoría entrega su informe) o "groupBase" (ej. psicología, donde
+// 1-2 y 5-6-7 son dos grupos que se numeran solos 1,2,3... y se corren
+// si a algo le falta contenido, sin dejar un hueco — así el documento
+// real, que salta del "2" al "5" porque no hay sección "3"/"4" propia,
+// queda igual si todo está lleno).
+//
+// Una sección con un solo campo de texto se muestra como un párrafo
+// (o viñetas) bajo su encabezado numerado. Una con varios campos (o
+// campos con sus propios sub-campos, como "Reforzamientos académicos"
+// con Inglés/Matemáticas/...) muestra cada uno con su propio
+// sub-encabezado en negrita debajo del título de la sección.
 function buildReportModel(report, config, roleLabel) {
   const narrative = report.narrative || {};
   const stats = report.stats || {};
   const has = (key) => !!narrative[key]?.trim();
+  const hasAny = (fields) => (fields || []).some((f) => (f.fields?.length ? hasAny(f.fields) : has(f.key)));
 
   const title = config.docTitle || `Informe Área de ${roleLabel}`;
-  const intro = has("resumen_general") ? splitParagraphs(narrative.resumen_general) : [];
-
-  const sections = [];
-  const addNarrativeSection = (key) => {
-    const field = config.narrativeFields.find((f) => f.key === key);
-    if (field && has(key)) sections.push({ number: SECTION_NUMBERS[key], heading: field.label, paragraphs: splitParagraphs(narrative[key]), bulleted: true });
-  };
-
-  addNarrativeSection("fortalecimiento_equipo");
 
   const monthlyField = (config.monthlyFields || [])[0];
   const listField = (config.listFields || [])[0];
   const monthlyRows = monthlyField ? stats[monthlyField.key]?.rows || [] : [];
   const listItems = listField ? stats[listField.key] || [] : [];
-  if (monthlyRows.length || listItems.length) {
-    sections.push({
-      number: DETAIL_SECTION_NUMBER,
-      heading: config.detailSectionTitle || "Detalle de atenciones",
-      detail: {
-        monthlyLabel: monthlyField?.label, monthlyRows,
-        totalLabel: `Total (${periodRangeLabel(report.period_type, report.period_start, report.period_end) || "periodo"})`,
-        total: monthlyRows.reduce((s, r) => s + (Number(r.value) || 0), 0),
-        listLabel: listField?.label, listItems,
-      },
-    });
-  }
+  const hasDetailData = monthlyRows.length > 0 || listItems.length > 0;
 
-  addNarrativeSection("desafios");
-  addNarrativeSection("logros");
-  addNarrativeSection("coordinacion");
-  sections.sort((a, b) => a.number - b.number);
+  // Arma el contenido de una sección: cada field se vuelve un ítem
+  // {subheading, paragraphs} (texto simple) o {subheading, children}
+  // (si el field a su vez tiene sub-campos, recursivo). El sub-título
+  // solo se muestra si hay más de un field en ese nivel — si es uno
+  // solo, su propio label ya se usa como el título de la sección.
+  const buildFieldContent = (fields) => {
+    const items = [];
+    const multi = (fields || []).length > 1;
+    for (const f of fields || []) {
+      if (f.fields?.length) {
+        if (!hasAny(f.fields)) continue;
+        items.push({ subheading: f.label, children: buildFieldContent(f.fields) });
+      } else if (has(f.key)) {
+        items.push({ subheading: multi ? f.label : null, paragraphs: splitParagraphs(narrative[f.key]) });
+      }
+    }
+    return items;
+  };
 
-  // El párrafo de cierre ("Conclusión general") no lleva número ni
-  // viñeta — es un párrafo corrido, igual que la intro — y va después
-  // de la última sección numerada (7) y antes de la tabla de totales.
-  const conclusion = has("conclusion") ? splitParagraphs(narrative.conclusion) : [];
+  const intro = [];
+  const sections = [];
+  const conclusion = [];
+  const groupNext = {}; // groupBase -> siguiente número a asignar en ese grupo
 
-  // Cualquier otro campo de texto que un rol futuro agregue y que no
-  // esté contemplado arriba se agrega igual, numerado a partir del 8.
-  const handled = new Set(["resumen_general", "fortalecimiento_equipo", "desafios", "logros", "coordinacion", "conclusion"]);
-  let extraNumber = 8;
-  for (const f of config.narrativeFields) {
-    if (!handled.has(f.key) && has(f.key)) sections.push({ number: extraNumber++, heading: f.label, paragraphs: splitParagraphs(narrative[f.key]), bulleted: true });
+  for (const node of config.narrativeFields || []) {
+    if (node.kind === "intro") { if (has(node.key)) intro.push(...splitParagraphs(narrative[node.key])); continue; }
+    if (node.kind === "closing") { if (has(node.key)) conclusion.push(...splitParagraphs(narrative[node.key])); continue; }
+    if (node.kind !== "section") continue;
+
+    if (node.isDetail) {
+      if (!hasDetailData) continue;
+      const number = node.number ?? (groupNext[node.groupBase] ??= node.groupBase);
+      if (node.groupBase !== undefined) groupNext[node.groupBase] = number + 1;
+      sections.push({
+        number, heading: config.detailSectionTitle || "Detalle de atenciones",
+        detail: {
+          monthlyLabel: monthlyField?.label, monthlyRows,
+          totalLabel: `Total (${periodRangeLabel(report.period_type, report.period_start, report.period_end) || "periodo"})`,
+          total: monthlyRows.reduce((s, r) => s + (Number(r.value) || 0), 0),
+          listLabel: listField?.label, listItems,
+        },
+      });
+      continue;
+    }
+
+    const fields = node.fields || [];
+    const items = buildFieldContent(fields);
+    if (items.length === 0) continue;
+
+    const number = node.number ?? (groupNext[node.groupBase] ??= node.groupBase);
+    if (node.groupBase !== undefined) groupNext[node.groupBase] = number + 1;
+    const heading = node.label || (fields.length === 1 && !fields[0].fields?.length ? fields[0].label : "");
+
+    sections.push({ number, heading, items, bulleted: !!node.bulleted });
   }
 
   const tableRows = config.statFields.filter((f) => stats[f.key] !== undefined).map((f) => ({ label: f.label, value: stats[f.key] }));
@@ -322,88 +362,128 @@ function buildReportModel(report, config, roleLabel) {
   return { title, intro, sections, conclusion, table: tableRows.length ? { headerLabel: periodRangeLabel(report.period_type, report.period_start, report.period_end) || "TOTALES", rows: tableRows } : null };
 }
 
-// PDF: se genera como una vista imprimible en una pestaña nueva y se
-// dispara el diálogo de impresión del navegador ("Guardar como PDF")
-// — sin depender de ninguna librería nueva. El diseño replica el
-// documento Word real (ver buildReportModel).
-function downloadReportPdf(report, config, roleLabel) {
-  const w = window.open("", "_blank");
-  if (!w) { alert("Tu navegador bloqueó la ventana emergente. Habilítala para descargar el PDF."); return; }
+// PDF real generado en el navegador (pdfmake) — se descarga como
+// archivo directo, no abre el diálogo de impresión. Mismo diseño que
+// el Word (ver buildReportModel): título, secciones numeradas con
+// viñetas, viñetas anidadas en el detalle de atenciones, tabla de
+// totales, y encabezado/pie con logo y número de página reales en
+// cada hoja (pdfmake sí sabe cuántas páginas tiene el documento).
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`No se pudo cargar ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+// pdfmake está pensada para cargarse como <script> clásico (deja
+// window.pdfMake) — empaquetarla con Vite/Rollup la partía en pedazos
+// de forma inestable, por eso vive como archivo estático en
+// public/vendor (ver ese README) y se carga así, una sola vez.
+let pdfMakeReadyPromise = null;
+function loadPdfMake() {
+  if (!pdfMakeReadyPromise) {
+    pdfMakeReadyPromise = loadScriptOnce("/vendor/pdfmake.min.js")
+      .then(() => loadScriptOnce("/vendor/pdfmake-helvetica.js"))
+      .then(() => window.pdfMake);
+  }
+  return pdfMakeReadyPromise;
+}
+
+async function downloadReportPdf(report, config, roleLabel) {
+  const pdfMake = await loadPdfMake();
 
   const model = buildReportModel(report, config, roleLabel);
-  const para = (t) => `<p style="margin:0 0 10px">${escapeHtml(t)}</p>`;
+  const FONT = "Helvetica";
 
-  const introHtml = model.intro.map(para).join("");
-
-  // Nivel 0 (•) y nivel 1 (o, indentado) — como el documento real:
+  const bulletList = (items) => ({ ul: items, margin: [0, 0, 0, 10] });
+  // Nivel 0 (•) y nivel 1 (indentado) — como el documento real:
   // "Incremento progresivo..." es la viñeta de primer nivel, cada mes
   // y el total van indentados debajo, en segundo nivel.
-  const bulletList = (items) => `<ul style="margin:0 0 10px;padding-left:20px;line-height:1.7;list-style-type:disc">${items.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul>`;
+  // Ojo: si el ítem lleva "text" y "ul" juntos en el mismo objeto,
+  // pdfmake descarta el texto en silencio (se pierde la etiqueta y
+  // solo quedan los sub-ítems) — por eso van como dos entradas
+  // separadas dentro de la misma lista: la etiqueta como texto plano,
+  // y la sub-lista como su propio ítem justo debajo (así indenta bien).
   const nestedBullet = (headLabel, subItems) => subItems.length
-    ? `<ul style="margin:0 0 10px;padding-left:20px;line-height:1.7;list-style-type:disc"><li>${escapeHtml(headLabel)}<ul style="margin:4px 0 0;padding-left:20px;list-style-type:circle">${subItems.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}</ul></li></ul>`
-    : "";
+    ? { ul: [headLabel, { ul: subItems }], margin: [0, 0, 0, 10] }
+    : null;
 
-  const sectionsHtml = model.sections.map((s) => {
-    const heading = `<p style="font-weight:700;margin:18px 0 8px">${s.number}. ${escapeHtml(s.heading)}</p>`;
-    if (s.detail) {
-      const monthlyHtml = nestedBullet(
-        `${s.detail.monthlyLabel}:`,
-        [...s.detail.monthlyRows.map((r) => `${r.label}: ${r.value}`), s.detail.monthlyRows.length ? `${s.detail.totalLabel}: ${s.detail.total}` : null].filter(Boolean)
-      );
-      const listHtml = nestedBullet(`${s.detail.listLabel}:`, s.detail.listItems);
-      return heading + monthlyHtml + listHtml;
+  // Recorre s.items (ver buildReportModel): cada uno es un párrafo
+  // simple (con o sin su propio sub-encabezado en negrita, según haya
+  // más de un field en la sección) o, si tiene "children", un grupo
+  // anidado un nivel más (ej. "Reforzamientos académicos").
+  const renderItems = (items, bulleted) => {
+    const nodes = [];
+    for (const item of items) {
+      if (item.subheading) nodes.push({ text: item.subheading, bold: true, margin: [0, 10, 0, 6] });
+      if (item.children) {
+        nodes.push({ margin: [14, 0, 0, 6], stack: renderItems(item.children, bulleted) });
+      } else if (bulleted) {
+        nodes.push(bulletList(item.paragraphs));
+      } else {
+        for (const p of item.paragraphs) nodes.push({ text: p, alignment: "justify", margin: [0, 0, 0, 8] });
+      }
     }
-    return heading + bulletList(s.paragraphs);
-  }).join("");
+    return nodes;
+  };
 
-  const conclusionHtml = model.conclusion.map(para).join("");
+  const content = [
+    { text: model.title, fontSize: 14, bold: true, alignment: "center", margin: [0, 0, 0, 16] },
+    ...model.intro.map((p) => ({ text: p, alignment: "justify", margin: [0, 0, 0, 10] })),
+  ];
 
-  const tableHtml = model.table ? `
-    <table style="width:100%;border-collapse:collapse;margin-top:24px">
-      <tr><td colspan="2" style="text-align:center;font-weight:700;background:#dbe4f3;border:1px solid #b8c6e3;padding:8px">${escapeHtml(model.table.headerLabel)}</td></tr>
-      ${model.table.rows.map((r) => `<tr><td style="text-align:center;border:1px solid #d7dde8;padding:7px">${escapeHtml(r.label)}</td><td style="text-align:center;border:1px solid #d7dde8;padding:7px">${r.value}</td></tr>`).join("")}
-    </table>` : "";
+  for (const s of model.sections) {
+    content.push({ text: `${s.number}. ${s.heading}`, bold: true, margin: [0, 12, 0, 6] });
+    if (s.detail) {
+      const monthly = nestedBullet(`${s.detail.monthlyLabel}:`, [
+        ...s.detail.monthlyRows.map((r) => `${r.label}: ${r.value}`),
+        ...(s.detail.monthlyRows.length ? [`${s.detail.totalLabel}: ${s.detail.total}`] : []),
+      ]);
+      if (monthly) content.push(monthly);
+      const list = nestedBullet(`${s.detail.listLabel}:`, s.detail.listItems);
+      if (list) content.push(list);
+      continue;
+    }
+    content.push(...renderItems(s.items, s.bulleted));
+  }
 
-  // El encabezado (logo + nombre del informe) se repite en cada hoja
-  // con position:fixed — eso sí es confiable en la impresión del
-  // navegador. Un pie de página con "Página X de Y" reales, en
-  // cambio, no es algo que HTML/CSS puedan calcular de forma
-  // confiable sin una librería de paginado — por eso el Word sí trae
-  // el número de página real (lo pone Word), y acá el pie solo lleva
-  // la marca de la institución.
-  const headerHtml = `
-    <div class="doc-header">
-      <img src="data:image/png;base64,${LOGO_PNG_BASE64}" alt="Casa ASOL" />
-      <div>
-        <strong>Casa ASOL</strong>
-        <div class="doc-header-sub">${escapeHtml(model.title)}</div>
-      </div>
-    </div>`;
+  for (const p of model.conclusion) content.push({ text: p, alignment: "justify", margin: [0, 12, 0, 0] });
 
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(model.title)}</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 92px 56px 60px; color: #1a1a2e; font-size: 13px; line-height: 1.55; }
-      p, li { text-align: justify; }
-      h1 { font-size: 18px; text-align: center; margin: 0 0 20px; }
-      .doc-header { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: 12px 56px; border-bottom: 1px solid #e0e0e0; background: #fff; }
-      .doc-header img { width: 34px; height: auto; flex-shrink: 0; }
-      .doc-header strong { font-size: 13px; }
-      .doc-header-sub { font-size: 11px; color: #6b7280; }
-      .doc-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: 8px 0; font-size: 10px; color: #9ca3af; border-top: 1px solid #eee; background: #fff; }
-      @media print { body { padding: 82px 24px 46px; } .doc-header { padding: 10px 24px; } }
-    </style></head>
-    <body>
-      ${headerHtml}
-      <div class="doc-footer">Casa ASOL</div>
-      <h1>${escapeHtml(model.title)}</h1>
-      ${introHtml}
-      ${sectionsHtml}
-      ${conclusionHtml}
-      ${tableHtml}
-    </body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(() => w.print(), 300);
+  if (model.table) {
+    content.push({
+      margin: [0, 20, 0, 0],
+      table: {
+        widths: ["*", "*"],
+        body: [
+          [{ text: model.table.headerLabel, colSpan: 2, alignment: "center", bold: true, fillColor: "#dbe4f3" }, {}],
+          ...model.table.rows.map((r) => [{ text: r.label, alignment: "center" }, { text: String(r.value), alignment: "center" }]),
+        ],
+      },
+    });
+  }
+
+  const docDefinition = {
+    pageMargins: [56, 90, 56, 60],
+    header: () => ({
+      margin: [56, 20, 56, 0],
+      columns: [
+        { image: `data:image/png;base64,${LOGO_PNG_BASE64}`, width: 34 },
+        { text: [{ text: "Casa ASOL\n", bold: true, fontSize: 11 }, { text: model.title, fontSize: 9, color: "#6b7280" }], margin: [10, 2, 0, 0] },
+      ],
+    }),
+    footer: (currentPage, pageCount) => ({
+      text: `Página ${currentPage} de ${pageCount}`, alignment: "center", fontSize: 8, color: "#9ca3af", margin: [0, 10, 0, 0],
+    }),
+    content,
+    defaultStyle: { font: FONT, fontSize: 10 },
+  };
+
+  const pdfDoc = pdfMake.createPdf(docDefinition);
+  await pdfDoc.download(`${report.report_code || "informe"}.pdf`);
 }
 
 // Word real (.docx), con el mismo diseño que el PDF y el documento
@@ -455,6 +535,32 @@ async function downloadReportWord(report, config, roleLabel) {
       run(" de ", { size: 18 }), new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 18 }),
     ] })],
   });
+  // Recorre s.items (ver buildReportModel): cada uno es un párrafo
+  // simple (con o sin su propio sub-encabezado en negrita, según haya
+  // más de un field en la sección) o, si tiene "children", un grupo
+  // anidado un nivel más (ej. "Reforzamientos académicos") — indentado
+  // 400 twips por nivel para que se note la jerarquía.
+  const renderItems = (items, bulleted, indent = 0) => {
+    const nodes = [];
+    for (const item of items) {
+      if (item.subheading) {
+        nodes.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 120 }, indent: indent ? { left: indent } : undefined, children: [run(item.subheading, { bold: true })] }));
+      }
+      if (item.children) {
+        nodes.push(...renderItems(item.children, bulleted, indent + 400));
+      } else if (bulleted) {
+        for (const p of item.paragraphs) nodes.push(bulletPara(p));
+      } else {
+        for (const p of item.paragraphs) {
+          nodes.push(indent
+            ? new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 160 }, indent: { left: indent }, children: [run(p)] })
+            : bodyPara(p));
+        }
+      }
+    }
+    return nodes;
+  };
+
   const children = [
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: [run(model.title, { bold: true, size: 28 })] }),
     ...model.intro.map(bodyPara),
@@ -475,7 +581,7 @@ async function downloadReportWord(report, config, roleLabel) {
       }
       continue;
     }
-    for (const p of s.paragraphs) children.push(bulletPara(p));
+    children.push(...renderItems(s.items, s.bulleted));
   }
 
   for (const p of model.conclusion) children.push(bodyPara(p));
@@ -501,6 +607,49 @@ async function downloadReportWord(report, config, roleLabel) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/* ── Formulario de texto: recorre config.narrativeFields (árbol de
+   secciones, ver reportFields.js) y muestra un textarea por cada
+   campo hoja. Si una sección tiene un solo campo (como en psicología)
+   se ve igual que antes: label + textarea. Si tiene varios (o campos
+   con sus propios sub-campos, como "Reforzamientos académicos" en
+   tutoría), se agrupan bajo el título de la sección con su propio
+   sub-encabezado cada uno. Lo usan el asistente paso a paso y el
+   modal de corrección de "devuelto" (sin pasos) — así se comportan
+   igual sin duplicar esta lógica. ── */
+function NarrativeFieldsForm({ narrativeFields, narrative, setNarrative, locked }) {
+  const textarea = (field, extraStyle) => (
+    <div key={field.key} style={{ marginBottom: 16, ...extraStyle }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>{field.label}</label>
+      <textarea value={narrative[field.key] || ""} disabled={locked} onChange={(e) => setNarrative(field.key, e.target.value)} style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} />
+    </div>
+  );
+
+  const renderFields = (fields, depth) => fields.map((f) =>
+    f.fields?.length
+      ? (
+        <div key={f.key} style={{ marginBottom: 16 }}>
+          <p style={{ margin: "0 0 10px", fontSize: 12, fontWeight: 700, color: "#374151" }}>{f.label}</p>
+          <div style={{ paddingLeft: 14, borderLeft: "2px solid #f0f0f0" }}>{renderFields(f.fields, depth + 1)}</div>
+        </div>
+      )
+      : textarea(f)
+  );
+
+  return narrativeFields.map((node, i) => {
+    if (node.kind === "intro" || node.kind === "closing") return textarea(node);
+    if (node.kind !== "section" || node.isDetail) return null;
+    const fields = node.fields || [];
+    const single = fields.length === 1 && !fields[0].fields?.length;
+    if (single) return textarea(fields[0]);
+    return (
+      <div key={node.number ?? i} style={{ marginBottom: 24, paddingTop: 16, borderTop: "1px solid #f0f0f0" }}>
+        <p style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{node.label}</p>
+        {renderFields(fields, 0)}
+      </div>
+    );
+  });
 }
 
 /* ── Botón para llenar el informe contando el expediente de atenciones ── */
@@ -660,7 +809,7 @@ function ReportViewModal({ report, config, roleLabel, onClose }) {
         {/* Bitácora completa: se listan TODOS los campos que el informe
             pide, aunque todavía estén vacíos — así se ve de un vistazo
             qué falta, sin tener que abrir el asistente. */}
-        {config.narrativeFields.map(({ key, label }) => {
+        {flattenNarrativeFields(config.narrativeFields).map(({ key, label }) => {
           const value = report.narrative?.[key]?.trim();
           return (
             <div key={key} style={{ marginTop: 20 }}>
@@ -854,24 +1003,25 @@ function RejectedEditModal({ report, config, roleLabel, canManageAllRoles, effec
         </div>
 
         <h3 style={{ margin: "26px 0 14px", fontSize: 14, fontWeight: 700, color: "#1a1a2e", borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>Descripción</h3>
-        {config.narrativeFields.map(({ key, label }) => (
-          <div key={key} style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>{label}</label>
-            <textarea value={draft.narrative[key] || ""} onChange={(e) => setNarrative(key, e.target.value)} style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} />
-          </div>
-        ))}
+        <NarrativeFieldsForm narrativeFields={config.narrativeFields} narrative={draft.narrative} setNarrative={setNarrative} locked={false} />
 
         <h3 style={{ margin: "26px 0 4px", fontSize: 14, fontWeight: 700, color: "#1a1a2e", borderBottom: "1px solid #f0f0f0", paddingBottom: 8 }}>Cifras del informe</h3>
         {hasAttentionSources && <CalculateFromAttentionsButton calculating={calculating} onClick={calculateFromAttentions} />}
-        <p style={{ margin: "10px 0 14px", fontSize: 12, color: "#9ca3af" }}>Un número por cada tipo de atención — obligatorio para todos.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 24 }}>
-          {config.statFields.map(({ key, label }) => (
-            <div key={key}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, lineHeight: 1.35, minHeight: 28 }}>{label}</label>
-              <input type="number" min="0" value={draft.stats[key] ?? ""} onChange={(e) => setStat(key, e.target.value)} style={inputStyle} placeholder="0" />
+        {config.statFields.length === 0 && !(config.monthlyFields || []).length && !(config.listFields || []).length ? (
+          <p style={{ margin: 0, fontSize: 13, color: "#9ca3af" }}>Este rol no tiene cifras que reportar — el informe es solo narrativo.</p>
+        ) : (
+          <>
+            <p style={{ margin: "10px 0 14px", fontSize: 12, color: "#9ca3af" }}>Un número por cada tipo de atención — obligatorio para todos.</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 24 }}>
+              {config.statFields.map(({ key, label }) => (
+                <div key={key}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, lineHeight: 1.35, minHeight: 28 }}>{label}</label>
+                  <input type="number" min="0" value={draft.stats[key] ?? ""} onChange={(e) => setStat(key, e.target.value)} style={inputStyle} placeholder="0" />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         {(config.monthlyFields || []).map(({ key, label }) => {
           const series = getSeries(key);
@@ -1095,10 +1245,11 @@ function Stepper({ step, setStep }) {
 
 export default function MiInformeTab() {
   const { authUser } = useApp();
-  // admin/desarrollador no tienen un informe "propio" — pueden elegir
-  // de cuál rol ver/crear informes, para tener acceso a las vistas de
-  // todos los roles operativos.
-  const canManageAllRoles = authUser.role === "admin" || authUser.role === "desarrollador";
+  // admin/desarrollador y las dos directoras no tienen un informe
+  // "propio" — pueden elegir de cuál rol ver/crear informes, y son
+  // quienes reciben y revisan (aceptan/devuelven) lo que envía cada
+  // área operativa.
+  const canManageAllRoles = ["admin", "desarrollador", "directora_tecnica", "directora_programatica"].includes(authUser.role);
 
   const [availableRoles, setAvailableRoles] = useState(null); // null = aún no se sabe (solo aplica a canManageAllRoles)
   const [selectedRole, setSelectedRole] = useState(null);
@@ -1401,12 +1552,9 @@ export default function MiInformeTab() {
         )}
 
         {/* Paso 2: Descripción */}
-        {step === 1 && config.narrativeFields.map(({ key, label }) => (
-          <div key={key} style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>{label}</label>
-            <textarea value={draft.narrative[key] || ""} disabled={locked} onChange={(e) => setNarrative(key, e.target.value)} style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} />
-          </div>
-        ))}
+        {step === 1 && (
+          <NarrativeFieldsForm narrativeFields={config.narrativeFields} narrative={draft.narrative} setNarrative={setNarrative} locked={locked} />
+        )}
 
         {/* Paso 3: Cifras del informe — totales, y detalle opcional para
             las categorías que el documento original pide desglosadas. */}
@@ -1416,16 +1564,22 @@ export default function MiInformeTab() {
               <CalculateFromAttentionsButton calculating={calculating} onClick={calculateFromAttentions} />
             )}
 
-            <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Totales del periodo</h3>
-            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#9ca3af" }}>Un número por cada tipo de atención — obligatorio para todos.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: (config.monthlyFields?.length || config.listFields?.length) ? 32 : 0 }}>
-              {config.statFields.map(({ key, label }) => (
-                <div key={key}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, lineHeight: 1.35, minHeight: 28 }}>{label}</label>
-                  <input type="number" min="0" value={draft.stats[key] ?? ""} disabled={locked} onChange={(e) => setStat(key, e.target.value)} style={inputStyle} placeholder="0" />
+            {config.statFields.length === 0 && !(config.monthlyFields || []).length && !(config.listFields || []).length ? (
+              <p style={{ margin: 0, fontSize: 13, color: "#9ca3af" }}>Este rol no tiene cifras que reportar — el informe es solo narrativo.</p>
+            ) : (
+              <>
+                <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Totales del periodo</h3>
+                <p style={{ margin: "0 0 14px", fontSize: 12, color: "#9ca3af" }}>Un número por cada tipo de atención — obligatorio para todos.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: (config.monthlyFields?.length || config.listFields?.length) ? 32 : 0 }}>
+                  {config.statFields.map(({ key, label }) => (
+                    <div key={key}>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, lineHeight: 1.35, minHeight: 28 }}>{label}</label>
+                      <input type="number" min="0" value={draft.stats[key] ?? ""} disabled={locked} onChange={(e) => setStat(key, e.target.value)} style={inputStyle} placeholder="0" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
 
             {(config.monthlyFields || []).map(({ key, label }) => {
               const series = getSeries(key);
@@ -1487,7 +1641,7 @@ export default function MiInformeTab() {
               <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#6b7280" }}>PERIODO</p>
               <p style={{ margin: "3px 0 0", fontSize: 13, color: "#1a1a2e" }}>{PERIOD_LABEL[draft.periodType]} · {formatDate(draft.periodStart)} – {formatDate(draft.periodEnd)}</p>
             </div>
-            {config.narrativeFields.filter(({ key }) => draft.narrative[key]?.trim()).map(({ key, label }) => (
+            {flattenNarrativeFields(config.narrativeFields).filter(({ key }) => draft.narrative[key]?.trim()).map(({ key, label }) => (
               <div key={key} style={{ marginBottom: 14 }}>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#6b7280" }}>{label.toUpperCase()}</p>
                 <p style={{ margin: "3px 0 0", fontSize: 13, color: "#1a1a2e", whiteSpace: "pre-wrap" }}>{draft.narrative[key]}</p>
