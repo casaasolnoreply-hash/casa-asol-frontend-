@@ -1,6 +1,7 @@
 import { PRIMARY, PRIMARY_DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
+import { CulturalWatermark } from "../ui/GuatemalanMotifs";
 
 export default function Financiacion() {
   const { content, isSectionVisible, setExpandModal } = useApp();
@@ -13,8 +14,11 @@ export default function Financiacion() {
   };
 
   return (
-    <section id="financiacion" style={{ padding: "80px 20px", background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)`, position: "relative", overflow: "hidden" }}>
+    <section id="financiacion" style={{ padding: "80px 20px", background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)`, position: "relative", zIndex: 0, overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -100, right: -80, width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,.08)", filter: "blur(10px)", pointerEvents: "none" }} />
+      <CulturalWatermark icon="volcano" size={320} color="#fff" opacity={.2} position={{ bottom: -40, left: -40 }} />
+      <CulturalWatermark icon="sunStone" size={170} color="#fff" opacity={.24} position={{ top: 20, right: 30 }} />
+      <CulturalWatermark icon="coffee" size={110} color="#fff" opacity={.18} position={{ bottom: 30, right: 60 }} rotate={8} />
 
       <ExpandBtn light onClick={() => setExpandModal({
         title: financiacion.title,

@@ -1,6 +1,7 @@
 import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import Icon from "../ui/Icon";
+import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
 
 function Avatar({ photoUrl, initials, size, ring }) {
   if (!photoUrl) {
@@ -80,7 +81,9 @@ export default function Equipo() {
   if (!isSectionVisible("equipo")) return null;
 
   return (
-    <section id="equipo" style={{ padding: "80px 20px", background: "#fff" }}>
+    <section id="equipo" style={{ padding: "80px 20px", background: "#fff", position: "relative", zIndex: 0, overflow: "hidden" }}>
+      <MujerTipicaWatermark tone="blue" size={148} opacity={.2} position={{ bottom: -20, right: -20 }} />
+      <CulturalWatermark icon="jaguar" size={150} color={PRIMARY} opacity={.15} position={{ top: -10, left: 24 }} rotate={-8} />
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: PRIMARY_LIGHT, color: PRIMARY_DARK, fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999 }}>

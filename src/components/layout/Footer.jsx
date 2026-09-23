@@ -1,13 +1,18 @@
 import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
+import { MayaPatternBar, HuipilStripe } from "../ui/GuatemalanMotifs";
 
 export default function Footer() {
   const { content } = useApp();
   const logoUrl = content.brand?.logoUrl;
 
   return (
-    <footer style={{ background: DARK, color: "#a8b1bf", padding: "52px 20px 0" }}>
-      <div className="ca-footer-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr", gap: 32, paddingBottom: 40 }}>
+    <footer style={{ background: DARK, color: "#a8b1bf", padding: "0 20px 0" }}>
+      <div style={{ margin: "0 -20px" }}>
+        <HuipilStripe height={10} />
+        <MayaPatternBar height={14} color={PRIMARY} opacity={.75} />
+      </div>
+      <div className="ca-footer-grid" style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1.2fr", gap: 32, paddingTop: 52, paddingBottom: 40 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             {logoUrl

@@ -2,6 +2,7 @@ import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/them
 import { useApp } from "../../context/AppContext";
 import { SmartIcon } from "../ui/Icon";
 import Icon from "../ui/Icon";
+import { CulturalWatermark } from "../ui/GuatemalanMotifs";
 import useRotatingIndex from "../../hooks/useRotatingIndex";
 
 function ProgramCard({ p, setExpandModal }) {
@@ -91,7 +92,9 @@ export default function Programa() {
   if (!isSectionVisible("programa")) return null;
 
   return (
-    <section id="programa" style={{ padding: "80px 20px", background: "#f7f9fc" }}>
+    <section id="programa" style={{ padding: "80px 20px", background: "#f7f9fc", position: "relative", zIndex: 0, overflow: "hidden" }}>
+      <CulturalWatermark icon="sunStone" size={320} color={PRIMARY} opacity={.18} position={{ top: -50, right: -50 }} />
+      <CulturalWatermark icon="coffee" size={150} color={PRIMARY_DARK} opacity={.16} position={{ bottom: -10, left: 20 }} rotate={-6} />
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: PRIMARY_LIGHT, color: PRIMARY_DARK, fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999 }}>

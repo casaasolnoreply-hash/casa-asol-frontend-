@@ -3,6 +3,7 @@ import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/them
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
 import Icon from "../ui/Icon";
+import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
 import useRotatingIndex from "../../hooks/useRotatingIndex";
 
 export default function Voluntariado() {
@@ -37,7 +38,10 @@ export default function Voluntariado() {
   const inp = { width: "100%", padding: "11px 14px", border: "1.5px solid #e6eaf0", borderRadius: 10, fontSize: 14, boxSizing: "border-box", fontFamily: "inherit", outline: "none" };
 
   return (
-    <section id="voluntariado" style={{ padding: "80px 20px", background: "#f7f9fc", position: "relative" }}>
+    <section id="voluntariado" style={{ padding: "80px 20px", background: "#f7f9fc", position: "relative", zIndex: 0, overflow: "hidden" }}>
+      <CulturalWatermark icon="ceiba" size={280} color={PRIMARY} opacity={.18} position={{ top: -30, right: -30 }} />
+      <MujerTipicaWatermark tone="blue" size={170} opacity={.16} position={{ bottom: -20, right: -10 }} />
+
       <ExpandBtn onClick={() => setExpandModal({
         title: voluntariado.title,
         content: (

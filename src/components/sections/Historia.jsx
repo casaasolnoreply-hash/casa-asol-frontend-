@@ -1,6 +1,7 @@
 import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
+import { CulturalWatermark } from "../ui/GuatemalanMotifs";
 import useRotatingIndex from "../../hooks/useRotatingIndex";
 
 function Kicker({ children }) {
@@ -24,7 +25,10 @@ export default function Historia() {
   const activeImg = useRotatingIndex(historiaImages.length, 5000);
 
   return (
-    <section id="historia" style={{ padding: "80px 20px", background: "#fff", position: "relative" }}>
+    <section id="historia" style={{ padding: "80px 20px", background: "#fff", position: "relative", zIndex: 0, overflow: "hidden" }}>
+      <CulturalWatermark icon="ceiba" size={280} color={PRIMARY} opacity={.2} position={{ bottom: -30, left: -30 }} />
+      <CulturalWatermark icon="arch" size={140} color={PRIMARY_DARK} opacity={.18} position={{ top: -10, right: 30 }} />
+
       <ExpandBtn onClick={() => setExpandModal({
         title: historia.title,
         content: (
