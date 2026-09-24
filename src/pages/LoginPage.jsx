@@ -6,6 +6,8 @@ import { api } from "../api/client";
 import Icon from "../components/ui/Icon";
 import PasswordInput from "../components/ui/PasswordInput";
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
+import GuatemalaFrame from "../components/layout/GuatemalaFrame";
+import { ImageWatermark } from "../components/ui/GuatemalanMotifs";
 
 const FEATURES = [
   { icon: "edit",    text: "Edita todo el contenido del sitio" },
@@ -18,6 +20,7 @@ const FEATURES = [
 export default function LoginPage() {
   const { isAdmin, login, content } = useApp();
   const logoUrl = content?.brand?.logoUrl;
+  const siteName = content?.brand?.siteName || "Casa ASOL";
   const navigate = useNavigate();
   const [user,    setUser]    = useState("");
   const [pass,    setPass]    = useState("");
@@ -50,15 +53,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "'Segoe UI', sans-serif" }}>
+    <GuatemalaFrame contentStyle={{ display: "flex", height: "100vh", fontFamily: "'Segoe UI', sans-serif", position: "relative" }} className="ca-login-wrap">
+
+      <Link
+        to="/"
+        className="ca-back-btn"
+        style={{
+          position: "absolute", top: 20, left: 20, zIndex: 5,
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "10px 18px", borderRadius: 999,
+          background: "rgba(255,255,255,.12)", border: "1.5px solid rgba(255,255,255,.4)",
+          color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <span style={{ fontSize: 16, lineHeight: 1 }}>←</span> Volver al sitio web
+      </Link>
 
       {/* ── LEFT BRANDING PANEL ── */}
-      <div style={{
+      <div className="ca-login-left" style={{
         flex: 1, background: `linear-gradient(145deg, ${DARK} 0%, #16213e 50%, ${PRIMARY} 100%)`,
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: "48px 56px", color: "#fff",
+        position: "relative", zIndex: 0, overflow: "hidden",
       }}>
+        <ImageWatermark name="tikal" tone="white" size={240} opacity={.16} position={{ bottom: -20, left: -30 }} />
+        <ImageWatermark name="mujer" tone="white" size={130} opacity={.22} position={{ top: 24, right: 20 }} />
+        <ImageWatermark name="quetzal" tone="white" size={90} opacity={.2} position={{ bottom: 30, right: -10 }} />
+
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 24, borderRadius: 10, background: "rgba(255,255,255,.08)", padding: 6 }} />
         ) : (
@@ -70,7 +93,7 @@ export default function LoginPage() {
         )}
 
         <h1 style={{ fontSize: 34, fontWeight: 800, margin: "0 0 10px", letterSpacing: 2, textAlign: "center" }}>
-          Casa ASOL
+          {siteName}
         </h1>
         <p style={{ fontSize: 14, opacity: .7, textAlign: "center", marginBottom: 52, lineHeight: 1.6 }}>
           Sistema de Administración Web
@@ -87,19 +110,23 @@ export default function LoginPage() {
       </div>
 
       {/* ── RIGHT LOGIN PANEL ── */}
-      <div style={{
+      <div className="ca-login-right" style={{
         width: 500, background: "#fff",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: "48px 56px",
+        position: "relative", zIndex: 0, overflow: "hidden",
       }}>
-        <div style={{ width: "100%", maxWidth: 380 }}>
+        <ImageWatermark name="escudo" tone="blue" size={150} opacity={.1} position={{ top: -30, right: -30 }} />
+        <ImageWatermark name="ceiba" tone="blue" size={160} opacity={.09} position={{ bottom: -30, left: -30 }} />
+
+        <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
           <div style={{ marginBottom: 36 }}>
             <h2 style={{ fontSize: 28, fontWeight: 800, color: DARK, margin: "0 0 8px" }}>
               Iniciar Sesión
             </h2>
             <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>
-              Panel de Administración · Casa ASOL
+              Panel de Administración · {siteName}
             </p>
           </div>
 
@@ -171,13 +198,19 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #f0f0f0", textAlign: "center" }}>
-            <Link to="/" style={{ color: "#9ca3af", fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              ← Volver al sitio web
-            </Link>
-          </div>
         </div>
       </div>
-    </div>
+
+      <style>{`
+        @media (max-width: 860px) {
+          .ca-login-wrap { flex-direction: column !important; height: auto !important; min-height: 100vh; }
+          .ca-login-left { padding: 90px 28px 40px !important; }
+          .ca-login-right { width: 100% !important; padding: 40px 24px !important; }
+          .ca-back-btn { top: 16px !important; left: 16px !important; padding: 8px 14px !important; font-size: 12px !important; }
+          .ca-login-left h1 { font-size: 26px !important; }
+          .ca-login-left p { margin-bottom: 28px !important; }
+        }
+      `}</style>
+    </GuatemalaFrame>
   );
 }

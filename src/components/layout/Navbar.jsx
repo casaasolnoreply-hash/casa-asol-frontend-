@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PRIMARY } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import Icon from "../ui/Icon";
+import { HuipilStripeVertical } from "../ui/GuatemalanMotifs";
 
 export default function Navbar() {
   const { navItems, scrollTo, content } = useApp();
@@ -18,6 +19,10 @@ export default function Navbar() {
 
   const visible = navItems.filter((x) => x.enabled);
   const logoUrl = content.brand?.logoUrl;
+  const siteName = content.brand?.siteName || "Casa ASOL";
+  const nameWords = siteName.trim().split(/\s+/);
+  const nameLast = nameWords.pop();
+  const nameRest = nameWords.join(" ");
 
   return (
     <nav
@@ -41,7 +46,7 @@ export default function Navbar() {
                   <polygon points="18,4 26,20 10,20" fill={PRIMARY} opacity=".7" />
                   <line x1="10" y1="30" x2="18" y2="18" stroke={PRIMARY} strokeWidth="2" />
                 </svg>
-                <span style={{ fontWeight: 800, fontSize: 19, color: "#111", letterSpacing: .3 }}>Casa <span style={{ color: PRIMARY }}>ASOL</span></span>
+                <span style={{ fontWeight: 800, fontSize: 19, color: "#111", letterSpacing: .3 }}>{nameRest ? nameRest + " " : ""}<span style={{ color: PRIMARY }}>{nameLast}</span></span>
               </>
           }
         </div>
@@ -66,7 +71,10 @@ export default function Navbar() {
               </button>
 
               {item.dropdown && openMenu === item.id && (
-                <div style={{ position: "absolute", top: "100%", left: 0, minWidth: 190, background: "#fff", borderRadius: 12, boxShadow: "0 14px 34px rgba(15,64,140,.16)", border: "1px solid #eef2f7", zIndex: 200, overflow: "hidden", padding: 6 }}>
+                <div style={{ position: "absolute", top: "100%", left: 0, minWidth: 190, background: "#fff", borderRadius: 12, boxShadow: "0 14px 34px rgba(15,64,140,.16)", border: "1px solid #eef2f7", zIndex: 200, overflow: "hidden", padding: "6px 6px 6px 12px" }}>
+                  <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 6, pointerEvents: "none" }}>
+                    <HuipilStripeVertical width={6} />
+                  </div>
                   {item.dropdown.filter((s) => s.enabled).map((sub) => (
                     <button key={sub.id}
                       onClick={(e) => { e.stopPropagation(); scrollTo(sub.href); setOpenMenu(null); }}

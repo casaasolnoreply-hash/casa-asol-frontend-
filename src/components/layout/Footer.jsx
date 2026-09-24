@@ -5,6 +5,7 @@ import { MayaPatternBar, HuipilStripe } from "../ui/GuatemalanMotifs";
 export default function Footer() {
   const { content } = useApp();
   const logoUrl = content.brand?.logoUrl;
+  const siteName = content.brand?.siteName || "Casa ASOL";
 
   return (
     <footer style={{ background: DARK, color: "#a8b1bf", padding: "0 20px 0" }}>
@@ -22,7 +23,7 @@ export default function Footer() {
                     <polygon points="18,4 32,30 4,30" fill="none" stroke="#e53935" strokeWidth="2.5" />
                     <polygon points="18,4 26,20 10,20" fill={PRIMARY} opacity=".8" />
                   </svg>
-                  <span style={{ fontWeight: 700, fontSize: 16, color: "#fff" }}>Casa ASOL</span>
+                  <span style={{ fontWeight: 700, fontSize: 16, color: "#fff" }}>{siteName}</span>
                 </>
             }
           </div>
@@ -60,7 +61,7 @@ export default function Footer() {
         </div>
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", padding: "20px 0", textAlign: "center", fontSize: 12, color: "#697280" }}>
-        © {new Date().getFullYear()} Casa Estudiantil ASOL. Todos los derechos reservados.
+        © {new Date().getFullYear()} {siteName}. Todos los derechos reservados.
       </div>
 
       <style>{`

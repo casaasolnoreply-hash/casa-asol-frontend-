@@ -4,7 +4,7 @@ import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
 import { SmartIcon } from "../ui/Icon";
 import Icon from "../ui/Icon";
-import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
+import { ImageWatermark } from "../ui/GuatemalanMotifs";
 
 export default function Contacto() {
   const { content, isSectionVisible, setExpandModal, addMessage } = useApp();
@@ -39,9 +39,9 @@ export default function Contacto() {
     <section id="contacto" style={{ padding: "80px 20px", background: DARK, position: "relative", zIndex: 0, overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -140, left: -100, width: 360, height: 360, borderRadius: "50%", background: PRIMARY, opacity: .18, filter: "blur(90px)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -160, right: -100, width: 320, height: 320, borderRadius: "50%", background: PRIMARY, opacity: .12, filter: "blur(90px)", pointerEvents: "none" }} />
-      <CulturalWatermark icon="tikal" size={290} color="#fff" opacity={.17} position={{ bottom: -20, right: 20 }} />
-      <MujerTipicaWatermark tone="white" size={112} opacity={.24} position={{ top: 20, left: 18 }} />
-      <CulturalWatermark icon="jaguar" size={110} color="#fff" opacity={.18} position={{ bottom: 30, left: -10 }} rotate={6} />
+      <ImageWatermark name="tikal" tone="white" size={290} opacity={.17} position={{ bottom: -20, right: 20 }} />
+      <ImageWatermark name="mujer" tone="white" size={112} opacity={.24} position={{ top: 20, left: 18 }} />
+      <ImageWatermark name="jaguar" tone="white" size={110} opacity={.18} position={{ bottom: 30, left: -10 }} rotate={6} />
 
       <ExpandBtn light onClick={() => setExpandModal({
         title: contacto.title,

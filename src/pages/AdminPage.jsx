@@ -132,7 +132,8 @@ function SectionWrapper({ sub, label, description }) {
 }
 
 export default function AdminPage() {
-  const { logout, unreadCount, authUser } = useApp();
+  const { logout, unreadCount, authUser, content } = useApp();
+  const siteName = content?.brand?.siteName || "Casa ASOL";
   const navigate = useNavigate();
   const isDeveloper = authUser?.role === "desarrollador";
   const canManageUsers = authUser?.role === "admin" || authUser?.role === "desarrollador";
@@ -289,7 +290,7 @@ export default function AdminPage() {
               <polygon points="18,4 32,30 4,30" fill="none" stroke="#e53935" strokeWidth="2.5" />
               <polygon points="18,4 26,20 10,20" fill={PRIMARY} opacity=".8" />
             </svg>
-            <span className="ca-hide-collapsed" style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>Casa ASOL</span>
+            <span className="ca-hide-collapsed" style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>{siteName}</span>
           </div>
           <p className="ca-hide-collapsed" style={{ fontSize: 10, opacity: .4, margin: 0 }}>Panel de Administración</p>
         </div>

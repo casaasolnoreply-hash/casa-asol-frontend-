@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { PRIMARY, DARK } from "../constants/theme";
+import { useApp } from "../context/AppContext";
 
 export default function MaintenancePage() {
+  const { content } = useApp();
+  const siteName = content?.brand?.siteName || "Casa ASOL";
   const [retrying, setRetrying] = useState(false);
 
   const retry = () => {
@@ -43,7 +46,7 @@ export default function MaintenancePage() {
         fontSize: 38, fontWeight: 800, color: "#fff",
         margin: "0 0 12px", letterSpacing: 1,
       }}>
-        Casa ASOL
+        {siteName}
       </h1>
 
       {/* Línea separadora */}
@@ -112,7 +115,7 @@ export default function MaintenancePage() {
 
       {/* Footer */}
       <p style={{ marginTop: 40, color: "rgba(255,255,255,.25)", fontSize: 12 }}>
-        &copy; {new Date().getFullYear()} Casa ASOL · Asociación
+        &copy; {new Date().getFullYear()} {siteName} · Asociación
       </p>
     </div>
   );

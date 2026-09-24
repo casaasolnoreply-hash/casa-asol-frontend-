@@ -2,7 +2,7 @@ import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/them
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
 import Icon from "../ui/Icon";
-import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
+import { ImageWatermark } from "../ui/GuatemalanMotifs";
 import useRotatingIndex from "../../hooks/useRotatingIndex";
 
 export default function Hero() {
@@ -44,9 +44,9 @@ export default function Hero() {
       <div style={{ position: "absolute", bottom: -160, left: -120, width: 380, height: 380, borderRadius: "50%", background: PRIMARY_DARK, opacity: .12, filter: "blur(80px)", pointerEvents: "none" }} />
 
       {/* Guatemalan cultural watermarks */}
-      <CulturalWatermark icon="tikal" size={430} color={PRIMARY_DARK} opacity={.24} position={{ bottom: -30, right: -40 }} />
-      <MujerTipicaWatermark tone="blue" size={123} opacity={.32} position={{ top: 26, left: 14 }} />
-      <CulturalWatermark icon="sunStone" size={110} color={PRIMARY} opacity={.2} position={{ bottom: -20, left: -20 }} />
+      <ImageWatermark name="tikal" tone="blue" size={430} opacity={.24} position={{ bottom: -30, right: -40 }} />
+      <ImageWatermark name="mujer" tone="blue" size={123} opacity={.32} position={{ top: 26, left: 14 }} />
+      <ImageWatermark name="escudo" tone="blue" size={110} opacity={.2} position={{ bottom: -20, left: -20 }} />
 
       <ExpandBtn onClick={() => setExpandModal({
         title: hero.title,

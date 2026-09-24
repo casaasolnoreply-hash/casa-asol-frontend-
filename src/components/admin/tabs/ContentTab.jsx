@@ -74,6 +74,8 @@ export default function ContentTab({ initialSub = "hero" }) {
     addHeroImage, removeHeroImage,
   } = useApp();
 
+  const upBank = (field, v) => upC("financiacion", "bank", { ...content.financiacion.bank, [field]: v });
+
   const paragraphs = content.historia.paragraphs?.length
     ? content.historia.paragraphs
     : [content.historia.text1, content.historia.text2].filter(Boolean);
@@ -325,13 +327,30 @@ export default function ContentTab({ initialSub = "hero" }) {
           ))}
         </div>
 
+        <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
+          <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#15803d", display: "flex", alignItems: "center", gap: 7 }}>
+            <Icon name="fileText" size={14} color="#15803d" /> Datos bancarios para depósito
+          </p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#166534" }}>Se muestran directamente en la sección de Financiación, sin necesidad de subir un PDF.</p>
+          <Field label="TÍTULO DEL BLOQUE"    value={content.financiacion.bank?.heading || ""}       onChange={(v) => upBank("heading", v)} />
+          <Field label="TEXTO INTRODUCTORIO"  value={content.financiacion.bank?.intro || ""}         onChange={(v) => upBank("intro", v)} textarea />
+          <Field label="TITULAR DE LA CUENTA" value={content.financiacion.bank?.accountHolder || ""} onChange={(v) => upBank("accountHolder", v)} />
+          <Field label="BANCO"                value={content.financiacion.bank?.bankName || ""}      onChange={(v) => upBank("bankName", v)} />
+          <Field label="N.º DE CUENTA"        value={content.financiacion.bank?.accountNumber || ""} onChange={(v) => upBank("accountNumber", v)} />
+          <Field label="CÓDIGO BANCARIO"      value={content.financiacion.bank?.bankCode || ""}      onChange={(v) => upBank("bankCode", v)} />
+          <Field label="IBAN"                 value={content.financiacion.bank?.iban || ""}          onChange={(v) => upBank("iban", v)} />
+          <Field label="BIC"                  value={content.financiacion.bank?.bic || ""}           onChange={(v) => upBank("bic", v)} />
+          <Field label="REFERENCIA DE PAGO"   value={content.financiacion.bank?.reference || ""}     onChange={(v) => upBank("reference", v)} />
+          <Field label="NOTA (ej. deducible de impuestos)" value={content.financiacion.bank?.note || ""} onChange={(v) => upBank("note", v)} />
+        </div>
+
         <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
           <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#0369a1", display: "flex", alignItems: "center", gap: 7 }}>
-            <Icon name="book" size={14} color="#0369a1" /> Documento de cuentas bancarias
+            <Icon name="book" size={14} color="#0369a1" /> Documento de cuentas bancarias (opcional)
           </p>
           <Field label="URL DEL DOCUMENTO (PDF u otro)" value={content.financiacion.docUrl || ""} onChange={(v) => upC("financiacion", "docUrl", v)} />
           <Field label="TEXTO DEL BOTÓN" value={content.financiacion.docLabel || "Ver cuentas para depósito"} onChange={(v) => upC("financiacion", "docLabel", v)} />
-          <p style={{ margin: 0, fontSize: 11, color: "#0c4a6e" }}>Sube el PDF a Cloudinary (Logo e Imágenes) y pega la URL aquí, o usa cualquier servicio externo.</p>
+          <p style={{ margin: 0, fontSize: 11, color: "#0c4a6e" }}>Solo si además quieres enlazar un PDF descargable. Sube el archivo a Cloudinary (Logo e Imágenes) y pega la URL aquí.</p>
         </div>
 
         <div style={{ marginBottom: 14 }}>

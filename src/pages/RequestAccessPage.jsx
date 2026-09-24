@@ -18,7 +18,8 @@ const labelStyle = {
 };
 
 export default function RequestAccessPage() {
-  const { isAdmin } = useApp();
+  const { isAdmin, content } = useApp();
+  const siteName = content?.brand?.siteName || "Casa ASOL";
   const [roles,   setRoles]   = useState([]);
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState("");
@@ -69,7 +70,7 @@ export default function RequestAccessPage() {
           Solicitar acceso
         </h1>
         <p style={{ fontSize: 14, opacity: .75, textAlign: "center", maxWidth: 340, lineHeight: 1.6 }}>
-          Cuenta con qué rol trabajas en Casa ASOL y un administrador o desarrollador revisará tu solicitud para darte acceso al sistema.
+          Cuenta con qué rol trabajas en {siteName} y un administrador o desarrollador revisará tu solicitud para darte acceso al sistema.
         </p>
       </div>
 
@@ -99,7 +100,7 @@ export default function RequestAccessPage() {
               <div style={{ marginBottom: 30 }}>
                 <h2 style={{ fontSize: 26, fontWeight: 800, color: DARK, margin: "0 0 8px" }}>Solicitar acceso</h2>
                 <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>
-                  Panel de Administración · Casa ASOL
+                  Panel de Administración · {siteName}
                 </p>
               </div>
 

@@ -2,7 +2,7 @@ import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
 import Icon from "../ui/Icon";
-import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
+import { ImageWatermark } from "../ui/GuatemalanMotifs";
 
 const TILE_ICONS = ["users", "home", "book", "star"];
 
@@ -13,8 +13,8 @@ export default function Stats() {
   return (
     <section style={{ padding: "0 20px", position: "relative", marginTop: -64, marginBottom: 40 }}>
       <div style={{ position: "relative", zIndex: 0, maxWidth: 1000, margin: "0 auto", background: "#fff", borderRadius: 20, boxShadow: "0 20px 50px rgba(15,64,140,.14)", border: "1px solid #eef2f7", padding: "30px 28px", overflow: "hidden" }}>
-        <CulturalWatermark icon="sunStone" size={190} color={PRIMARY} opacity={.14} position={{ top: -40, right: -40 }} />
-        <MujerTipicaWatermark tone="blue" size={58} opacity={.12} position={{ bottom: -20, left: -10 }} />
+        <ImageWatermark name="escudo" tone="blue" size={190} opacity={.14} position={{ top: -40, right: -40 }} />
+        <ImageWatermark name="mujer" tone="blue" size={58} opacity={.12} position={{ bottom: -20, left: -10 }} />
 
         <ExpandBtn onClick={() => setExpandModal({
           title: "Estadísticas",

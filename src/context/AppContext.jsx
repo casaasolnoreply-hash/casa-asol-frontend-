@@ -121,6 +121,11 @@ export function AppProvider({ children }) {
     }, 1500);
   }, []); // deps vacías: es estable porque solo lee refs
 
+  /* ── Título de la pestaña, sincronizado con el nombre del sitio ── */
+  useEffect(() => {
+    document.title = content.brand?.siteName || "Casa ASOL";
+  }, [content.brand?.siteName]);
+
   /* ── Efectos de auto-guardado (uno por clave) ── */
   useEffect(() => { scheduleSave("content",  content);  }, [content,  scheduleSave]);
   useEffect(() => { scheduleSave("stats",    stats);    }, [stats,    scheduleSave]);

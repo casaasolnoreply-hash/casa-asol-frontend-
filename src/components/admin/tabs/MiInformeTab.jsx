@@ -393,7 +393,7 @@ function loadPdfMake() {
   return pdfMakeReadyPromise;
 }
 
-async function downloadReportPdf(report, config, roleLabel) {
+async function downloadReportPdf(report, config, roleLabel, siteName = "Casa ASOL") {
   const pdfMake = await loadPdfMake();
 
   const model = buildReportModel(report, config, roleLabel);
@@ -472,7 +472,7 @@ async function downloadReportPdf(report, config, roleLabel) {
       margin: [56, 20, 56, 0],
       columns: [
         { image: `data:image/png;base64,${LOGO_PNG_BASE64}`, width: 34 },
-        { text: [{ text: "Casa ASOL\n", bold: true, fontSize: 11 }, { text: model.title, fontSize: 9, color: "#6b7280" }], margin: [10, 2, 0, 0] },
+        { text: [{ text: `${siteName}\n`, bold: true, fontSize: 11 }, { text: model.title, fontSize: 9, color: "#6b7280" }], margin: [10, 2, 0, 0] },
       ],
     }),
     footer: (currentPage, pageCount) => ({
@@ -490,7 +490,7 @@ async function downloadReportPdf(report, config, roleLabel) {
 // original: título centrado, párrafo introductorio, secciones
 // numeradas en negrita, "Logros" con viñetas, y la tabla de totales
 // al final con el periodo como encabezado.
-async function downloadReportWord(report, config, roleLabel) {
+async function downloadReportWord(report, config, roleLabel, siteName = "Casa ASOL") {
   const {
     Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType,
     Header, Footer, ImageRun, PageNumber, VerticalAlign, BorderStyle,
@@ -522,7 +522,7 @@ async function downloadReportWord(report, config, roleLabel) {
             new Paragraph({ children: [new ImageRun({ type: "png", data: logoBytes, transformation: { width: 42, height: 33 } })] }),
           ] }),
           new TableCell({ width: { size: 85, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [
-            new Paragraph({ children: [run("Casa ASOL", { bold: true, size: 22 })] }),
+            new Paragraph({ children: [run(siteName, { bold: true, size: 22 })] }),
             new Paragraph({ children: [run(model.title, { size: 18, color: "6b7280" })] }),
           ] }),
         ] })],
@@ -1086,7 +1086,7 @@ function RejectedEditModal({ report, config, roleLabel, canManageAllRoles, effec
 }
 
 /* ── Pantalla de inicio: tabla + filtros ── */
-function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAllRoles, effectiveRole, onReload }) {
+function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAllRoles, effectiveRole, onReload, siteName }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [periodFilter, setPeriodFilter] = useState("");
   const [year, setYear] = useState("");
@@ -1207,8 +1207,8 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
                     <Icon name="edit" size={13} />
                   </button>
                 )}
-                <button onClick={() => downloadReportPdf(r, config, roleLabel)} title="Descargar PDF" style={actionBtn}><Icon name="fileText" size={13} /></button>
-                <button onClick={() => downloadReportWord(r, config, roleLabel)} title="Descargar Word" style={actionBtn}><Icon name="book" size={13} /></button>
+                <button onClick={() => downloadReportPdf(r, config, roleLabel, siteName)} title="Descargar PDF" style={actionBtn}><Icon name="fileText" size={13} /></button>
+                <button onClick={() => downloadReportWord(r, config, roleLabel, siteName)} title="Descargar Word" style={actionBtn}><Icon name="book" size={13} /></button>
               </div>
             </div>
           );
@@ -1244,7 +1244,8 @@ function Stepper({ step, setStep }) {
 }
 
 export default function MiInformeTab() {
-  const { authUser } = useApp();
+  const { authUser, content } = useApp();
+  const siteName = content.brand?.siteName || "Casa ASOL";
   // admin/desarrollador y las dos directoras no tienen un informe
   // "propio" — pueden elegir de cuál rol ver/crear informes, y son
   // quienes reciben y revisan (aceptan/devuelven) lo que envía cada
@@ -1477,7 +1478,7 @@ export default function MiInformeTab() {
         {roleSelector}
         <InformesInicio
           reports={reports} config={config} roleLabel={roleLabel} onOpen={openReport} onNew={openNew}
-          canManageAllRoles={canManageAllRoles} effectiveRole={effectiveRole} onReload={load}
+          canManageAllRoles={canManageAllRoles} effectiveRole={effectiveRole} onReload={load} siteName={siteName}
         />
       </div>
     );
@@ -1494,10 +1495,10 @@ export default function MiInformeTab() {
         </button>
         {draft.id && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => downloadReportPdf({ ...draft, report_code: draft.reportCode, period_type: draft.periodType, period_start: draft.periodStart, period_end: draft.periodEnd }, config, roleLabel)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+            <button onClick={() => downloadReportPdf({ ...draft, report_code: draft.reportCode, period_type: draft.periodType, period_start: draft.periodStart, period_end: draft.periodEnd }, config, roleLabel, siteName)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
               <Icon name="fileText" size={13} /> Descargar PDF
             </button>
-            <button onClick={() => downloadReportWord({ ...draft, report_code: draft.reportCode, period_type: draft.periodType, period_start: draft.periodStart, period_end: draft.periodEnd }, config, roleLabel)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+            <button onClick={() => downloadReportWord({ ...draft, report_code: draft.reportCode, period_type: draft.periodType, period_start: draft.periodStart, period_end: draft.periodEnd }, config, roleLabel, siteName)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#374151", cursor: "pointer" }}>
               <Icon name="book" size={13} /> Descargar Word
             </button>
           </div>

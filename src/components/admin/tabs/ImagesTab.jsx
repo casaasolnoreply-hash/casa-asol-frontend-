@@ -26,6 +26,16 @@ export default function ImagesTab() {
         <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>Las fotos del equipo y las imágenes de programas se gestionan en sus respectivas secciones</p>
       </div>
 
+      {/* Nombre del sitio */}
+      <Card title="Nombre del sitio" desc="Aparece en la barra de navegación, el pie de página, el inicio de sesión y otros textos del sitio.">
+        <input
+          value={content.brand?.siteName ?? "Casa ASOL"}
+          onChange={(e) => upC("brand", "siteName", e.target.value)}
+          placeholder="Casa ASOL"
+          style={{ width: "100%", padding: "8px 12px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }}
+        />
+      </Card>
+
       {/* Logo */}
       <Card title="Logo del sitio" desc="Aparece en la barra de navegación y el pie de página. Deja vacío para usar el logo predeterminado.">
         {content.brand?.logoUrl && (

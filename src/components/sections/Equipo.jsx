@@ -1,7 +1,7 @@
 import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import Icon from "../ui/Icon";
-import { CulturalWatermark, MujerTipicaWatermark } from "../ui/GuatemalanMotifs";
+import { ImageWatermark } from "../ui/GuatemalanMotifs";
 
 function Avatar({ photoUrl, initials, size, ring }) {
   if (!photoUrl) {
@@ -22,6 +22,8 @@ function Avatar({ photoUrl, initials, size, ring }) {
 }
 
 function MemberCard({ m, setExpandModal }) {
+  const { content } = useApp();
+  const siteName = content.brand?.siteName || "Casa ASOL";
   const workPhotos = m.photos || [];
 
   return (
@@ -44,7 +46,7 @@ function MemberCard({ m, setExpandModal }) {
 
               {workPhotos.length > 0 && (
                 <>
-                  <p style={{ textAlign: "left", fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: 1, margin: "0 0 12px" }}>SU LABOR EN CASA ASOL</p>
+                  <p style={{ textAlign: "left", fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: 1, margin: "0 0 12px" }}>SU LABOR EN {siteName.toUpperCase()}</p>
                   <div style={{ display: "grid", gridTemplateColumns: workPhotos.length === 1 ? "1fr" : "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
                     {workPhotos.map((src, i) => (
                       <img key={i} src={src} alt={m.name} style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 12 }} />
@@ -82,8 +84,8 @@ export default function Equipo() {
 
   return (
     <section id="equipo" style={{ padding: "80px 20px", background: "#fff", position: "relative", zIndex: 0, overflow: "hidden" }}>
-      <MujerTipicaWatermark tone="blue" size={148} opacity={.2} position={{ bottom: -20, right: -20 }} />
-      <CulturalWatermark icon="jaguar" size={150} color={PRIMARY} opacity={.15} position={{ top: -10, left: 24 }} rotate={-8} />
+      <ImageWatermark name="mujer" tone="blue" size={148} opacity={.2} position={{ bottom: -20, right: -20 }} />
+      <ImageWatermark name="jaguar" tone="blue" size={150} opacity={.15} position={{ top: -10, left: 24 }} rotate={-8} />
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: PRIMARY_LIGHT, color: PRIMARY_DARK, fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999 }}>

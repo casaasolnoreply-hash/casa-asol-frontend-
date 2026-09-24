@@ -1,18 +1,18 @@
 export const DEFAULT_CONTENT = {
-  brand: { logoUrl: "" },
+  brand: { logoUrl: "", siteName: "Casa ASOL" },
   topbar: {
-    address: "10a Calle 2-25, Zona 16, Santa Rosita, 01016 Guatemala",
+    address: "01 A Calle 09-34, Ciudad de Guatemala, 01016, Guatemala",
     locationUrl: "",
     phone: "(+502) 2255 9450",
-    facebook: "",
-    linkedin: "",
-    instagram: "",
+    facebook: "https://www.facebook.com/CasaASOL/",
+    linkedin: "https://www.linkedin.com/company/112347752/",
+    instagram: "https://threads.instagram.com/casaestudiantilasol/",
   },
   hero: {
     bgUrl: "",
     images: [],
     title: "CASA ESTUDIANTIL ASOL",
-    subtitle: "Oportunidades y protección para los niños frente a desventaja y violencia.",
+    subtitle: "Promovemos el desarrollo integral, la educación y la protección de mujeres adolescentes indígenas en situación de vulnerabilidad en Guatemala.",
     btn1Text: "CONOCER MÁS",
     btn1Href: "#programa",
     btn2Text: "AYUDAR Y DONAR",
@@ -37,23 +37,36 @@ export const DEFAULT_CONTENT = {
   financiacion: {
     supertitle: "AYUDAR Y DONAR",
     title: "Tu apoyo cambia vidas",
-    desc: "Con tu donación mensual ayudas a garantizar educación, alimentación y un hogar seguro para niños guatemaltecos en situación de vulnerabilidad.",
-    amounts: ["Q50 / mes", "Q100 / mes", "Q250 / mes", "Otra cantidad"],
+    desc: "La Casa Estudiantil ASOL brinda a alrededor de 20 adolescentes y jóvenes de entre 14 y 20 años, provenientes de contextos de vulnerabilidad, exclusión o riesgo, la oportunidad de acceder a una educación de calidad y construir un proyecto de vida digno y sostenible.",
+    amounts: ["€100 / mes", "€150 / mes", "€300 / mes", "Otra cantidad"],
     btnText: "DONAR AHORA",
     docUrl: "",
     docLabel: "Ver cuentas para depósito",
     paymentEnabled: false,
     donacionImages: [],
+    bank: {
+      heading: "¿Quiere ayudar? ¡Es muy fácil!",
+      intro: "¿Hemos despertado su interés por el apadrinamiento, o quiere apoyar a los niños de alguna otra manera? Simplemente póngase en contacto con nosotros.",
+      accountHolder: "Solidarität mit Lateinamerika-CHE",
+      bankName: "Raiffeisenbank Graz-St. Peter",
+      accountNumber: "50.9513",
+      bankCode: "38367",
+      iban: "AT59 3836 7000 0050 9513",
+      bic: "RZSTAT2G367",
+      reference: "Casa Hogar Estudiantil",
+      note: "Su donación es deducible de impuestos.",
+    },
   },
   voluntariado: {
     supertitle: "VOLUNTARIADO",
     title: "Únete como voluntario",
-    desc: "Buscamos personas comprometidas que quieran dedicar su tiempo y talento a transformar la vida de niños y jóvenes guatemaltecos.",
+    desc: "Buscamos personas nacionales e internacionales, mayores de 18 años y con conocimientos básicos de español, que quieran contribuir al desarrollo integral de nuestras adolescentes y jóvenes. Modalidad independiente desde 2 meses, o de largo plazo a través del Servicio Austriaco en el Extranjero.",
     list: [
-      "Apoyo educativo (tutorías y refuerzo)",
-      "Talleres de arte y manualidades",
-      "Actividades deportivas y recreativas",
-      "Asistencia administrativa y comunicación",
+      "Acompañamiento escolar y tutorías",
+      "Actividades recreativas y formativas",
+      "Apoyo en la panadería social",
+      "Gestión de fondos y comunicación institucional",
+      "Centro de Aprendizaje Tecnológico y Ecológico",
     ],
     btnText: "QUIERO VOLUNTARIAR",
     images: [],
@@ -62,36 +75,37 @@ export const DEFAULT_CONTENT = {
     supertitle: "CONTACTO",
     title: "Ponte en contacto con nosotros",
     items: [
-      { icon: "location", title: "Dirección", val: "10a Calle 2-25, Zona 16, Santa Rosita, 01016 Guatemala" },
-      { icon: "phone",    title: "Teléfono", val: "(+502) 2255 9450" },
-      { icon: "mail",     title: "Correo", val: "info@casaasol.org" },
+      { icon: "location", title: "Dirección", val: "01 A Calle 09-34, Ciudad de Guatemala, 01016, Guatemala" },
+      { icon: "phone",    title: "Teléfono", val: "(+502) 2255 9450 · 5926 2580 · 5396 7179" },
+      { icon: "mail",     title: "Correo", val: "asolguate1990@gmail.com · direccion@asol-onmicrosoft.com" },
       { icon: "clock",    title: "Horario", val: "Lunes a Viernes, 8:00 – 17:00 hrs" },
     ],
   },
   footer: {
-    desc: "Oportunidades y protección para los niños frente a desventaja y violencia desde 2009.",
+    desc: "Educación, protección y desarrollo integral para mujeres adolescentes indígenas en Guatemala, a través de la Casa Estudiantil ASOL desde 1992.",
   },
 };
 
 export const DEFAULT_STATS = [
-  { id: 1, value: "120+", label: "Estudiantes beneficiados" },
-  { id: 2, value: "15",   label: "Años de operación" },
+  { id: 1, value: "500+", label: "Adolescentes y jóvenes acompañados desde 1992" },
+  { id: 2, value: "34+",  label: "Años de trabajo ininterrumpido" },
   { id: 3, value: "45",   label: "Voluntarios activos" },
   { id: 4, value: "98%",  label: "Tasa de continuidad escolar" },
 ];
 
 export const DEFAULT_PROGRAMA = [
-  { id: 1, icon: "book",     title: "Apoyo Escolar",       desc: "Refuerzo académico diario para niños de primaria y básicos.", images: [] },
-  { id: 2, icon: "home",     title: "Alojamiento Seguro",  desc: "Espacio de protección para estudiantes en riesgo de violencia.", images: [] },
-  { id: 3, icon: "utensils", title: "Alimentación",        desc: "Tres comidas balanceadas al día para todos los residentes.", images: [] },
-  { id: 4, icon: "palette",  title: "Arte y Deporte",      desc: "Actividades extracurriculares para el desarrollo integral.", images: [] },
+  { id: 1, icon: "home",    title: "Casa Estudiantil ASOL", desc: "Nuestro principal mecanismo de protección: un hogar seguro y temporal para adolescentes y jóvenes mientras superan las condiciones de riesgo que motivaron su ingreso. Brinda educación, atención psicológica, formación en derechos humanos y fortalecimiento de la identidad cultural, con miras a la reintegración familiar o la autonomía.", images: [] },
+  { id: 2, icon: "users",   title: "Reintegración Familiar", desc: "Becas externas para jóvenes que pueden permanecer en sus comunidades pero enfrentan barreras económicas para estudiar. Incluyen formación mensual en ciudadanía, derechos y autocuidado, además de un encuentro anual entre becadas externas e internas.", images: [] },
+  { id: 3, icon: "utensils", title: "Vida Independiente",   desc: "Alojamiento seguro a bajo costo y formación técnica y ocupacional —como panadería y pastelería— para que las participantes adquieran experiencia laboral, generen ingresos propios y construyan proyectos de vida libres de violencia.", images: [] },
+  { id: 4, icon: "compass", title: "Proyección Comunitaria", desc: "Alianzas con actores locales para prevenir la violencia y la exclusión mediante talleres, refuerzo académico y actividades culturales. Incluye nuestro Centro de Aprendizaje Ecológico y Tecnológico, con paneles solares, biodigestores y eco-senderos.", images: [] },
 ];
 
 export const DEFAULT_TEAM = [
-  { id: 1, initials: "DG", name: "Directora General",         role: "Responsable de la visión y gestión de la casa", photos: [] },
-  { id: 2, initials: "CP", name: "Coordinadora Pedagógica",   role: "Diseño y seguimiento de programas educativos", photos: [] },
-  { id: 3, initials: "TS", name: "Trabajadora Social",        role: "Acompañamiento a familias en situación vulnerable", photos: [] },
-  { id: 4, initials: "PC", name: "Psicóloga Clínica",         role: "Apoyo emocional y terapéutico a los estudiantes", photos: [] },
+  { id: 1, initials: "DT", name: "Dirección Técnica y Programática", role: "Conduce la visión institucional y el diseño de los programas de ASOL", photos: [] },
+  { id: 2, initials: "AI", name: "Asesora Institucional",            role: "Acompaña la gestión estratégica y el fortalecimiento organizacional", photos: [] },
+  { id: 3, initials: "TA", name: "Tutora Académica",                 role: "Apoyo escolar y seguimiento educativo de las participantes", photos: [] },
+  { id: 4, initials: "TS", name: "Trabajadora Social",               role: "Acompañamiento a familias en situación vulnerable", photos: [] },
+  { id: 5, initials: "PS", name: "Psicóloga",                        role: "Atención emocional y terapéutica individual y grupal", photos: [] },
 ];
 
 export const DEFAULT_NAV = [

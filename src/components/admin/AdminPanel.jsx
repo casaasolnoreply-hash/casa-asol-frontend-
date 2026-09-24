@@ -14,7 +14,8 @@ const TABS = [
 ];
 
 export default function AdminPanel() {
-  const { showAdmin, setShowAdmin, setIsAdmin } = useApp();
+  const { showAdmin, setShowAdmin, setIsAdmin, content } = useApp();
+  const siteName = content?.brand?.siteName || "Casa ASOL";
   const [tab, setTab] = useState("nav");
 
   if (!showAdmin) return null;
@@ -33,7 +34,7 @@ export default function AdminPanel() {
         <div style={{ background: DARK, color: "#fff", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <div>
             <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>⚙️ Panel de Administración</p>
-            <p style={{ margin: 0, fontSize: 11, opacity: .6 }}>Casa ASOL — Editor de contenido</p>
+            <p style={{ margin: 0, fontSize: 11, opacity: .6 }}>{siteName} — Editor de contenido</p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={logout} style={{ padding: "5px 12px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>

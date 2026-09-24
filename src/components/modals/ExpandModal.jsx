@@ -1,5 +1,6 @@
 import { PRIMARY } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
+import { HuipilStripeVertical, NahualesStripeVertical } from "../ui/GuatemalanMotifs";
 
 export default function ExpandModal() {
   const { expandModal, setExpandModal } = useApp();
@@ -17,23 +18,33 @@ export default function ExpandModal() {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#fff", borderRadius: 14, padding: "44px 52px",
+          background: "#fff", borderRadius: 14,
           maxWidth: 820, width: "100%", maxHeight: "90vh",
-          overflowY: "auto", boxShadow: "0 32px 96px rgba(0,0,0,.45)",
-          position: "relative",
+          boxShadow: "0 32px 96px rgba(0,0,0,.45)",
+          position: "relative", overflow: "hidden",
         }}
       >
+        <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 16, zIndex: 2 }}>
+          <HuipilStripeVertical width={16} />
+        </div>
+        <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: 20, zIndex: 2 }}>
+          <NahualesStripeVertical width={20} />
+        </div>
+
         <button
           onClick={() => setExpandModal(null)}
-          style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", fontSize: 26, cursor: "pointer", color: "#aaa", lineHeight: 1 }}
+          style={{ position: "absolute", top: 16, right: 32, zIndex: 3, background: "none", border: "none", fontSize: 26, cursor: "pointer", color: "#aaa", lineHeight: 1 }}
         >
           ×
         </button>
-        <h2 style={{ margin: "0 0 28px", fontSize: 30, fontWeight: 800, color: PRIMARY }}>
-          {expandModal.title}
-        </h2>
-        <div style={{ fontSize: 17, lineHeight: 1.85, color: "#333" }}>
-          {expandModal.content}
+
+        <div style={{ padding: "44px 50px 44px 40px", maxHeight: "90vh", overflowY: "auto", boxSizing: "border-box" }}>
+          <h2 style={{ margin: "0 0 28px", fontSize: 30, fontWeight: 800, color: PRIMARY }}>
+            {expandModal.title}
+          </h2>
+          <div style={{ fontSize: 17, lineHeight: 1.85, color: "#333" }}>
+            {expandModal.content}
+          </div>
         </div>
       </div>
     </div>
