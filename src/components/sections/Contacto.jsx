@@ -1,19 +1,31 @@
 import { useState } from "react";
 import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
+import { UI } from "../../i18n/translations";
 import ExpandBtn from "../ui/ExpandBtn";
 import { SmartIcon } from "../ui/Icon";
 import Icon from "../ui/Icon";
-import { ImageWatermark } from "../ui/GuatemalanMotifs";
 
 export default function Contacto() {
-  const { content, isSectionVisible, setExpandModal, addMessage } = useApp();
+  const { content, isSectionVisible, setExpandModal, addMessage, language, contentTranslations } = useApp();
   const [form, setForm]     = useState({ name: "", email: "", subject: "", message: "" });
   const [sent, setSent]     = useState(false);
   const [sending, setSending] = useState(false);
 
   if (!isSectionVisible("contacto")) return null;
+  const t = UI[language];
   const { contacto } = content;
+  const supertitle = language === "es" ? contacto.supertitle : t.nav.contacto;
+  const title = language === "es" ? contacto.title : (contentTranslations[language]?.contacto?.title || contacto.title);
+  const items = contacto.items.map((c) => ({
+    ...c,
+    title: language === "es" ? c.title : (t.contacto.itemTitles[c.icon] || c.title),
+    // La dirección siempre es la misma que la de la Barra superior — una sola fuente,
+    // así nunca puede quedar desincronizada aunque el campo guardado aquí sea viejo.
+    val: c.icon === "location"
+      ? content.topbar.address
+      : (language !== "es" && c.icon === "clock") ? (contentTranslations[language]?.contacto?.horarioVal || c.val) : c.val,
+  }));
 
   const upField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -39,15 +51,11 @@ export default function Contacto() {
     <section id="contacto" style={{ padding: "80px 20px", background: DARK, position: "relative", zIndex: 0, overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -140, left: -100, width: 360, height: 360, borderRadius: "50%", background: PRIMARY, opacity: .18, filter: "blur(90px)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -160, right: -100, width: 320, height: 320, borderRadius: "50%", background: PRIMARY, opacity: .12, filter: "blur(90px)", pointerEvents: "none" }} />
-      <ImageWatermark name="tikal" tone="white" size={290} opacity={.17} position={{ bottom: -20, right: 20 }} />
-      <ImageWatermark name="mujer" tone="white" size={112} opacity={.24} position={{ top: 20, left: 18 }} />
-      <ImageWatermark name="jaguar" tone="white" size={110} opacity={.18} position={{ bottom: 30, left: -10 }} rotate={6} />
-
       <ExpandBtn light onClick={() => setExpandModal({
-        title: contacto.title,
+        title,
         content: (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-            {contacto.items.map((c, i) => (
+            {items.map((c, i) => (
               <div key={i} style={{ display: "flex", gap: 18, alignItems: "flex-start" }}>
                 <SmartIcon value={c.icon} size={34} color={PRIMARY} />
                 <div>
@@ -64,16 +72,16 @@ export default function Contacto() {
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,.08)", color: "#cfe4fb", fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999, border: "1px solid rgba(255,255,255,.12)" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: PRIMARY }} />
-            {contacto.supertitle}
+            {supertitle}
           </span>
-          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: "#fff", letterSpacing: -.4 }}>{contacto.title}</h2>
+          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: "#fff", letterSpacing: -.4 }}>{title}</h2>
         </div>
 
         <div className="ca-contacto-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 30 }}>
           {/* Contact info */}
           <div style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 20, padding: 30, backdropFilter: "blur(6px)" }}>
-            {contacto.items.map((c, i) => (
-              <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < contacto.items.length - 1 ? 24 : 0 }}>
+            {items.map((c, i) => (
+              <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < items.length - 1 ? 24 : 0 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <SmartIcon value={c.icon} size={18} color={PRIMARY_LIGHT} />
                 </div>
@@ -90,29 +98,29 @@ export default function Contacto() {
             {sent ? (
               <div style={{ background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.35)", borderRadius: 12, padding: "24px", textAlign: "center" }}>
                 <Icon name="check" size={32} color="#4ade80" />
-                <p style={{ margin: "12px 0 0", fontWeight: 700, color: "#4ade80", fontSize: 16 }}>¡Mensaje enviado!</p>
-                <p style={{ margin: "6px 0 0", color: "#a8b1bf", fontSize: 14 }}>Nos pondremos en contacto contigo pronto.</p>
+                <p style={{ margin: "12px 0 0", fontWeight: 700, color: "#4ade80", fontSize: 16 }}>{t.contacto.enviado}</p>
+                <p style={{ margin: "6px 0 0", color: "#a8b1bf", fontSize: 14 }}>{t.contacto.pondremos}</p>
               </div>
             ) : (
               <>
                 <div style={{ marginBottom: 14 }}>
-                  <input className="ca-dark-input" value={form.name} onChange={(e) => upField("name", e.target.value)} placeholder="Nombre *" required style={inp} />
+                  <input className="ca-dark-input" value={form.name} onChange={(e) => upField("name", e.target.value)} placeholder={t.contacto.nombrePh} required style={inp} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <input className="ca-dark-input" type="email" value={form.email} onChange={(e) => upField("email", e.target.value)} placeholder="Correo electrónico *" required style={inp} />
+                  <input className="ca-dark-input" type="email" value={form.email} onChange={(e) => upField("email", e.target.value)} placeholder={t.contacto.correoPh} required style={inp} />
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <input className="ca-dark-input" value={form.subject} onChange={(e) => upField("subject", e.target.value)} placeholder="Asunto" style={inp} />
+                  <input className="ca-dark-input" value={form.subject} onChange={(e) => upField("subject", e.target.value)} placeholder={t.contacto.asuntoPh} style={inp} />
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <textarea className="ca-dark-input" value={form.message} onChange={(e) => upField("message", e.target.value)} placeholder="Mensaje *" required rows={4} style={{ ...inp, resize: "vertical" }} />
+                  <textarea className="ca-dark-input" value={form.message} onChange={(e) => upField("message", e.target.value)} placeholder={t.contacto.mensajePh} required rows={4} style={{ ...inp, resize: "vertical" }} />
                 </div>
                 <button
                   type="submit"
                   disabled={sending}
                   style={{ padding: "13px 28px", background: sending ? "#3f6ea8" : PRIMARY, color: "#fff", border: "none", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: sending ? "wait" : "pointer", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: sending ? "none" : `0 10px 24px ${PRIMARY}55` }}
                 >
-                  {sending ? "Enviando..." : <><Icon name="mail" size={15} color="#fff" /> ENVIAR MENSAJE</>}
+                  {sending ? t.contacto.enviando : <><Icon name="mail" size={15} color="#fff" /> {t.contacto.enviar}</>}
                 </button>
               </>
             )}

@@ -13,20 +13,22 @@ import Contacto     from "../components/sections/Contacto";
 import ExpandModal  from "../components/modals/ExpandModal";
 import { HuipilStripe } from "../components/ui/GuatemalanMotifs";
 import GuatemalaFrame from "../components/layout/GuatemalaFrame";
+import LanguageSuggestionBar from "../components/layout/LanguageSuggestionBar";
 
 export default function MainPage() {
   return (
     <GuatemalaFrame contentStyle={{ fontFamily: "'Segoe UI', sans-serif", color: "#333" }}>
       <ExpandModal />
+      <LanguageSuggestionBar />
       <TopBar />
       <Navbar />
       <HuipilStripe height={8} />
       <main>
         <Hero />
         <Stats />
-        <Historia />
         <Programa />
         <Equipo />
+        <Historia />
         <Financiacion />
         <DonacionCarousel />
         <Voluntariado />

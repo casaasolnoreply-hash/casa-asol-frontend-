@@ -1,7 +1,6 @@
 import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import ExpandBtn from "../ui/ExpandBtn";
-import { ImageWatermark } from "../ui/GuatemalanMotifs";
 import useRotatingIndex from "../../hooks/useRotatingIndex";
 
 function Kicker({ children }) {
@@ -14,32 +13,34 @@ function Kicker({ children }) {
 }
 
 export default function Historia() {
-  const { content, isSectionVisible, setExpandModal } = useApp();
+  const { content, isSectionVisible, setExpandModal, language, contentTranslations } = useApp();
   if (!isSectionVisible("historia")) return null;
 
   const { historia } = content;
-  const paragraphs = historia.paragraphs?.length
+  const tHist = language === "es" ? null : contentTranslations[language]?.historia;
+  const paragraphs = tHist?.paragraphs || (historia.paragraphs?.length
     ? historia.paragraphs
-    : [historia.text1, historia.text2].filter(Boolean);
+    : [historia.text1, historia.text2].filter(Boolean));
+  const quote = tHist?.quote || historia.quote;
+  const quoteAuthor = tHist?.quoteAuthor || historia.quoteAuthor;
+  const supertitle = tHist?.supertitle || historia.supertitle;
+  const title = tHist?.title || historia.title;
   const historiaImages = historia.images?.length ? historia.images : (historia.imageUrl ? [historia.imageUrl] : []);
   const activeImg = useRotatingIndex(historiaImages.length, 5000);
 
   return (
     <section id="historia" style={{ padding: "80px 20px", background: "#fff", position: "relative", zIndex: 0, overflow: "hidden" }}>
-      <ImageWatermark name="ceiba" tone="blue" size={280} opacity={.2} position={{ bottom: -30, left: -30 }} />
-      <ImageWatermark name="catedral" tone="blue" size={200} opacity={.18} position={{ top: -10, right: 30 }} />
-
       <ExpandBtn onClick={() => setExpandModal({
-        title: historia.title,
+        title,
         content: (
           <div>
-            <p style={{ color: PRIMARY, fontWeight: 700, fontSize: 14, letterSpacing: 2, marginBottom: 12 }}>{historia.supertitle}</p>
+            <p style={{ color: PRIMARY, fontWeight: 700, fontSize: 14, letterSpacing: 2, marginBottom: 12 }}>{supertitle}</p>
             {paragraphs.map((p, i) => (
               <p key={i} style={{ fontSize: 17, lineHeight: 1.9, color: "#444", marginBottom: i < paragraphs.length - 1 ? 20 : 32 }}>{p}</p>
             ))}
             <div style={{ background: PRIMARY_LIGHT, borderRadius: 10, padding: "28px 32px", borderLeft: `5px solid ${PRIMARY}` }}>
-              <p style={{ fontStyle: "italic", color: "#333", lineHeight: 1.85, fontSize: 19, margin: "0 0 16px" }}>"{historia.quote}"</p>
-              <p style={{ color: PRIMARY_DARK, fontWeight: 700, fontSize: 15, margin: 0 }}>{historia.quoteAuthor}</p>
+              <p style={{ fontStyle: "italic", color: "#333", lineHeight: 1.85, fontSize: 19, margin: "0 0 16px" }}>"{quote}"</p>
+              <p style={{ color: PRIMARY_DARK, fontWeight: 700, fontSize: 15, margin: 0 }}>{quoteAuthor}</p>
             </div>
           </div>
         ),
@@ -47,8 +48,8 @@ export default function Historia() {
 
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
-          <Kicker>{historia.supertitle}</Kicker>
-          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: DARK, letterSpacing: -.4 }}>{historia.title}</h2>
+          <Kicker>{supertitle}</Kicker>
+          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: DARK, letterSpacing: -.4 }}>{title}</h2>
         </div>
 
         <div className="ca-historia-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
@@ -75,14 +76,14 @@ export default function Historia() {
                 ))}
               </div>
               <div style={{ background: PRIMARY_LIGHT, borderRadius: 14, padding: "18px 22px", borderLeft: `4px solid ${PRIMARY}` }}>
-                <p style={{ fontStyle: "italic", color: "#3a4250", lineHeight: 1.8, fontSize: 14, margin: 0 }}>"{historia.quote}"</p>
-                <p style={{ color: PRIMARY_DARK, fontWeight: 700, fontSize: 13, margin: "10px 0 0" }}>{historia.quoteAuthor}</p>
+                <p style={{ fontStyle: "italic", color: "#3a4250", lineHeight: 1.8, fontSize: 14, margin: 0 }}>"{quote}"</p>
+                <p style={{ color: PRIMARY_DARK, fontWeight: 700, fontSize: 13, margin: "10px 0 0" }}>{quoteAuthor}</p>
               </div>
             </div>
           ) : (
             <div style={{ background: PRIMARY_LIGHT, borderRadius: 18, padding: 30, borderLeft: `4px solid ${PRIMARY}` }}>
-              <p style={{ fontStyle: "italic", color: "#3a4250", lineHeight: 1.8, fontSize: 15 }}>"{historia.quote}"</p>
-              <p style={{ marginTop: 16, color: PRIMARY_DARK, fontWeight: 700, fontSize: 13 }}>{historia.quoteAuthor}</p>
+              <p style={{ fontStyle: "italic", color: "#3a4250", lineHeight: 1.8, fontSize: 15 }}>"{quote}"</p>
+              <p style={{ marginTop: 16, color: PRIMARY_DARK, fontWeight: 700, fontSize: 13 }}>{quoteAuthor}</p>
             </div>
           )}
         </div>

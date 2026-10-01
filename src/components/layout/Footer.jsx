@@ -1,11 +1,14 @@
 import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
+import { UI } from "../../i18n/translations";
 import { MayaPatternBar, HuipilStripe } from "../ui/GuatemalanMotifs";
 
 export default function Footer() {
-  const { content } = useApp();
+  const { content, language, contentTranslations } = useApp();
+  const t = UI[language];
   const logoUrl = content.brand?.logoUrl;
   const siteName = content.brand?.siteName || "Casa ASOL";
+  const footerDesc = language === "es" ? content.footer.desc : (contentTranslations[language]?.footer?.desc || content.footer.desc);
 
   return (
     <footer style={{ background: DARK, color: "#a8b1bf", padding: "0 20px 0" }}>
@@ -17,7 +20,7 @@ export default function Footer() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             {logoUrl
-              ? <img src={logoUrl} alt="Logo" style={{ height: 36, maxWidth: 120, objectFit: "contain" }} />
+              ? <img src={logoUrl} alt="Logo" style={{ height: 72, maxWidth: 220, objectFit: "contain" }} />
               : <>
                   <svg width="28" height="28" viewBox="0 0 36 36">
                     <polygon points="18,4 32,30 4,30" fill="none" stroke="#e53935" strokeWidth="2.5" />
@@ -27,11 +30,11 @@ export default function Footer() {
                 </>
             }
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.85, color: "#8a93a3", maxWidth: 280 }}>{content.footer.desc}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.85, color: "#8a93a3", maxWidth: 280 }}>{footerDesc}</p>
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>LA CASA</p>
-          {["El Equipo", "Historia", "Programa"].map((l) => (
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>{t.footer.col1}</p>
+          {t.footer.links1.map((l) => (
             <p key={l} style={{ margin: "0 0 10px" }}>
               <a href="#" style={{ color: "#8a93a3", textDecoration: "none", fontSize: 13.5, transition: "color .15s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = PRIMARY_LIGHT)}
@@ -42,8 +45,8 @@ export default function Footer() {
           ))}
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>AYUDAR</p>
-          {["Financiación", "Voluntariado"].map((l) => (
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>{t.footer.col2}</p>
+          {t.footer.links2.map((l) => (
             <p key={l} style={{ margin: "0 0 10px" }}>
               <a href="#" style={{ color: "#8a93a3", textDecoration: "none", fontSize: 13.5, transition: "color .15s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = PRIMARY_LIGHT)}
@@ -54,14 +57,14 @@ export default function Footer() {
           ))}
         </div>
         <div>
-          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>CONTACTO</p>
+          <p style={{ color: "#fff", fontWeight: 700, fontSize: 12.5, letterSpacing: 1, marginBottom: 16 }}>{t.footer.col3}</p>
           <p style={{ fontSize: 13.5, color: "#8a93a3", lineHeight: 1.9 }}>
             {content.topbar.address}<br />{content.topbar.phone}
           </p>
         </div>
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", padding: "20px 0", textAlign: "center", fontSize: 12, color: "#697280" }}>
-        © {new Date().getFullYear()} {siteName}. Todos los derechos reservados.
+        © {new Date().getFullYear()} {siteName}. {t.footer.rights}
       </div>
 
       <style>{`

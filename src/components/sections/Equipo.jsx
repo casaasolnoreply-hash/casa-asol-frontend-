@@ -1,7 +1,7 @@
 import { PRIMARY, PRIMARY_DARK, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
+import { UI } from "../../i18n/translations";
 import Icon from "../ui/Icon";
-import { ImageWatermark } from "../ui/GuatemalanMotifs";
 
 function Avatar({ photoUrl, initials, size, ring }) {
   if (!photoUrl) {
@@ -21,10 +21,14 @@ function Avatar({ photoUrl, initials, size, ring }) {
   );
 }
 
-function MemberCard({ m, setExpandModal }) {
-  const { content } = useApp();
+function MemberCard({ m, setExpandModal, language, t }) {
+  const { content, contentTranslations } = useApp();
   const siteName = content.brand?.siteName || "Casa ASOL";
   const workPhotos = m.photos || [];
+
+  const tr = language === "es" ? null : contentTranslations[language]?.team?.[m.id];
+  const name = tr?.name || m.name;
+  const role = tr?.role || m.role;
 
   return (
     <div
@@ -34,22 +38,22 @@ function MemberCard({ m, setExpandModal }) {
     >
       <button
         onClick={() => setExpandModal({
-          title: m.name,
+          title: name,
           content: (
             <div style={{ textAlign: "center" }}>
               {m.photoUrl
-                ? <img src={m.photoUrl} alt={m.name} style={{ width: 140, height: 140, borderRadius: "50%", objectFit: "cover", margin: "0 auto 24px", display: "block", border: `3px solid ${PRIMARY}` }} />
+                ? <img src={m.photoUrl} alt={name} style={{ width: 140, height: 140, borderRadius: "50%", objectFit: "cover", margin: "0 auto 24px", display: "block", border: `3px solid ${PRIMARY}` }} />
                 : <div style={{ width: 130, height: 130, borderRadius: "50%", background: PRIMARY_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, fontWeight: 700, color: PRIMARY, margin: "0 auto 24px", border: `3px solid ${PRIMARY}` }}>{m.initials}</div>
               }
-              <p style={{ fontSize: 24, fontWeight: 700, color: "#222", marginBottom: 8 }}>{m.name}</p>
-              <p style={{ fontSize: 18, color: "#666", lineHeight: 1.7, marginBottom: workPhotos.length ? 28 : 0 }}>{m.role}</p>
+              <p style={{ fontSize: 24, fontWeight: 700, color: "#222", marginBottom: 8 }}>{name}</p>
+              <p style={{ fontSize: 18, color: "#666", lineHeight: 1.7, marginBottom: workPhotos.length ? 28 : 0 }}>{role}</p>
 
               {workPhotos.length > 0 && (
                 <>
-                  <p style={{ textAlign: "left", fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: 1, margin: "0 0 12px" }}>SU LABOR EN {siteName.toUpperCase()}</p>
+                  <p style={{ textAlign: "left", fontSize: 12, fontWeight: 700, color: PRIMARY, letterSpacing: 1, margin: "0 0 12px" }}>{t.equipo.suLabor(siteName)}</p>
                   <div style={{ display: "grid", gridTemplateColumns: workPhotos.length === 1 ? "1fr" : "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
                     {workPhotos.map((src, i) => (
-                      <img key={i} src={src} alt={m.name} style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 12 }} />
+                      <img key={i} src={src} alt={name} style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 12 }} />
                     ))}
                   </div>
                 </>
@@ -72,32 +76,31 @@ function MemberCard({ m, setExpandModal }) {
         <Avatar photoUrl={m.photoUrl} initials={m.initials} size={76} ring={3} />
       </div>
 
-      <p style={{ fontWeight: 700, fontSize: 14, color: DARK, margin: "0 0 4px" }}>{m.name}</p>
-      <p style={{ fontSize: 12, color: PRIMARY_DARK, lineHeight: 1.5, margin: 0, fontWeight: 600 }}>{m.role}</p>
+      <p style={{ fontWeight: 700, fontSize: 14, color: DARK, margin: "0 0 4px" }}>{name}</p>
+      <p style={{ fontSize: 12, color: PRIMARY_DARK, lineHeight: 1.5, margin: 0, fontWeight: 600 }}>{role}</p>
     </div>
   );
 }
 
 export default function Equipo() {
-  const { team, isSectionVisible, setExpandModal } = useApp();
+  const { team, isSectionVisible, setExpandModal, language } = useApp();
   if (!isSectionVisible("equipo")) return null;
+  const t = UI[language];
 
   return (
     <section id="equipo" style={{ padding: "80px 20px", background: "#fff", position: "relative", zIndex: 0, overflow: "hidden" }}>
-      <ImageWatermark name="mujer" tone="blue" size={148} opacity={.2} position={{ bottom: -20, right: -20 }} />
-      <ImageWatermark name="jaguar" tone="blue" size={150} opacity={.15} position={{ top: -10, left: 24 }} rotate={-8} />
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: PRIMARY_LIGHT, color: PRIMARY_DARK, fontSize: 12, fontWeight: 700, letterSpacing: .6, padding: "6px 15px", borderRadius: 999 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: PRIMARY }} />
-            NUESTRO EQUIPO
+            {t.equipo.kicker}
           </span>
-          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: DARK, letterSpacing: -.4 }}>Las personas detrás de ASOL</h2>
+          <h2 style={{ fontSize: "clamp(24px,3.4vw,34px)", fontWeight: 800, margin: "16px 0 0", color: DARK, letterSpacing: -.4 }}>{t.equipo.heading}</h2>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 22 }}>
           {team.map((m) => (
-            <MemberCard key={m.id} m={m} setExpandModal={setExpandModal} />
+            <MemberCard key={m.id} m={m} setExpandModal={setExpandModal} language={language} t={t} />
           ))}
         </div>
       </div>

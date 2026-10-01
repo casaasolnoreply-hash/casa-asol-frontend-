@@ -4,6 +4,7 @@ import {
   DEFAULT_CONTENT, DEFAULT_STATS, DEFAULT_PROGRAMA,
   DEFAULT_TEAM, DEFAULT_NAV, DEFAULT_SECTIONS,
 } from "../constants/defaults";
+import { CONTENT_TRANSLATIONS, buildAutoTranslationShape, mergeTranslations, detectBrowserLanguage } from "../i18n/translations";
 
 const AppContext = createContext(null);
 
@@ -31,6 +32,42 @@ export function AppProvider({ children }) {
   const [isAdmin,  setIsAdmin]  = useState(() => !!sessionStorage.getItem("ca-token"));
   const [authUser, setAuthUser] = useState(null);
 
+  /* ── Idioma (preferencia del visitante, no se guarda en la BD) ── */
+  const [language, setLanguageState] = useState(() => {
+    try { return localStorage.getItem("ca-lang") || "es"; } catch { return "es"; }
+  });
+  // Distingue "nunca eligió nada" de "eligió español a propósito", para
+  // saber si todavía corresponde sugerirle cambiar de idioma o no.
+  const setLanguage = (lang) => {
+    setLanguageState(lang);
+    try {
+      localStorage.setItem("ca-lang", lang);
+      localStorage.setItem("ca-lang-explicit", "1");
+    } catch { /* localStorage no disponible */ }
+    setLangSuggestion(null);
+  };
+
+  /* ── Sugerencia de idioma según el navegador (banda descartable) ── */
+  const [langSuggestion, setLangSuggestion] = useState(null);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("ca-lang-explicit")) return; // ya eligió antes, no se vuelve a preguntar
+    } catch { return; }
+    const detected = detectBrowserLanguage();
+    if (detected) setLangSuggestion(detected);
+  }, []);
+
+  const acceptLangSuggestion = () => { if (langSuggestion) setLanguage(langSuggestion); };
+  const dismissLangSuggestion = () => {
+    setLangSuggestion(null);
+    try { localStorage.setItem("ca-lang-explicit", "1"); } catch { /* localStorage no disponible */ }
+  };
+
+  // Traducciones EN/DE: empiezan con el respaldo escrito a mano y se van
+  // reemplazando campo por campo con lo que haya generado DeepL en la BD
+  // (ver loadAll más abajo y mergeTranslations en i18n/translations.js).
+  const [contentTranslations, setContentTranslations] = useState({ en: CONTENT_TRANSLATIONS.en, de: CONTENT_TRANSLATIONS.de });
+
   /* ── Carga inicial desde backend ── */
   useEffect(() => {
     const token = sessionStorage.getItem("ca-token");
@@ -51,13 +88,21 @@ export function AppProvider({ children }) {
 
     const loadAll = async () => {
       try {
-        const [cRes, sRes, pRes, tRes, nRes, secRes] = await Promise.all([
+        const [cRes, sRes, pRes, tRes, nRes, secRes, cEnRes, cDeRes, pEnRes, pDeRes, tEnRes, tDeRes, sEnRes, sDeRes] = await Promise.all([
           api.getData("content"),
           api.getData("stats"),
           api.getData("programa"),
           api.getData("team"),
           api.getData("nav"),
           api.getData("sections"),
+          api.getData("content_en"),
+          api.getData("content_de"),
+          api.getData("programa_en"),
+          api.getData("programa_de"),
+          api.getData("team_en"),
+          api.getData("team_de"),
+          api.getData("stats_en"),
+          api.getData("stats_de"),
         ]);
 
         if (cRes.value != null) {
@@ -77,6 +122,17 @@ export function AppProvider({ children }) {
         if (tRes.value   != null) setTeam(tRes.value);
         if (nRes.value   != null) setNavItems(nRes.value);
         if (secRes.value != null) setSections(secRes.value);
+
+        // Traducciones automáticas generadas por DeepL al guardar en español
+        // (pueden no existir todavía si nunca se ha vuelto a guardar nada
+        // desde que se activó esta función) — se fusionan sobre el respaldo
+        // manual, nunca lo reemplazan de golpe.
+        const autoEn = buildAutoTranslationShape(cEnRes.value, pEnRes.value, tEnRes.value, sEnRes.value);
+        const autoDe = buildAutoTranslationShape(cDeRes.value, pDeRes.value, tDeRes.value, sDeRes.value);
+        setContentTranslations({
+          en: mergeTranslations(CONTENT_TRANSLATIONS.en, autoEn),
+          de: mergeTranslations(CONTENT_TRANSLATIONS.de, autoDe),
+        });
       } catch (err) {
         // TypeError = sin red / backend caído
         if (err instanceof TypeError || err.message?.toLowerCase().includes("fetch")) {
@@ -123,8 +179,16 @@ export function AppProvider({ children }) {
 
   /* ── Título de la pestaña, sincronizado con el nombre del sitio ── */
   useEffect(() => {
-    document.title = content.brand?.siteName || "Casa ASOL";
+    document.title = content.brand?.siteName || "Asociación Solidaridad para la Educación y Cultura (ASOL)";
   }, [content.brand?.siteName]);
+
+  /* ── Ícono de la pestaña (favicon), sincronizado con el logo subido ── */
+  useEffect(() => {
+    const logoUrl = content.brand?.logoUrl;
+    if (!logoUrl) return; // sin logo propio, se deja el ícono por defecto de index.html
+    const link = document.getElementById("favicon");
+    if (link) link.href = logoUrl;
+  }, [content.brand?.logoUrl]);
 
   /* ── Efectos de auto-guardado (uno por clave) ── */
   useEffect(() => { scheduleSave("content",  content);  }, [content,  scheduleSave]);
@@ -292,6 +356,8 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       content, stats, programa, team, navItems, sections,
       messages, isAdmin, authUser, expandModal, loading, saving, backendError,
+      language, setLanguage, contentTranslations,
+      langSuggestion, acceptLangSuggestion, dismissLangSuggestion,
       setContent, setStats, setPrograma, setTeam, setNavItems, setSections,
       setExpandModal, setMessages, setAuthUser,
       login, logout, uploadImage,

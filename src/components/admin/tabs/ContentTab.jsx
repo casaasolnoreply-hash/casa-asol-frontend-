@@ -521,7 +521,16 @@ export default function ContentTab({ initialSub = "hero" }) {
                 </button>
               </div>
               <Field label="TÍTULO" value={item.title} onChange={(v) => upContact(i, "title", v)} />
-              <Field label="VALOR"  value={item.val}   onChange={(v) => upContact(i, "val", v)} />
+              {item.icon === "location" ? (
+                <>
+                  <Field label="VALOR" value={content.topbar.address} onChange={(v) => upC("topbar", "address", v)} />
+                  <p style={{ margin: "-8px 0 14px", fontSize: 11, color: "#9ca3af" }}>
+                    Este valor es el mismo que la Dirección de la Barra superior — cambiarlo aquí también lo actualiza allá.
+                  </p>
+                </>
+              ) : (
+                <Field label="VALOR" value={item.val} onChange={(v) => upContact(i, "val", v)} />
+              )}
               <IconPicker value={item.icon} onChange={(v) => upContact(i, "icon", v)} />
             </div>
           ))}

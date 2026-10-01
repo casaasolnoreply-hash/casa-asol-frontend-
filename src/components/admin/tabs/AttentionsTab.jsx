@@ -3,6 +3,7 @@ import { PRIMARY } from "../../../constants/theme";
 import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
+import AddImageBtn from "../AddImageBtn";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -16,12 +17,15 @@ function formatDate(iso) {
 }
 
 function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
-  const [form, setForm] = useState(initial || { attentionDate: "", type: config.types[0]?.key || "", beneficiaryId: "", notes: "" });
+  const [form, setForm] = useState(initial || { attentionDate: "", type: config.types[0]?.key || "", beneficiaryId: "", notes: "", images: [] });
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const typeDef = config.types.find((t) => t.key === form.type);
+  const images = form.images || [];
+  const addImage    = (url) => setForm((f) => ({ ...f, images: [...(f.images || []), url] }));
+  const removeImage = (idx) => setForm((f) => ({ ...f, images: (f.images || []).filter((_, i) => i !== idx) }));
 
   const submit = async () => {
     if (!form.attentionDate) return setErr("La fecha es obligatoria");
@@ -30,7 +34,7 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
     setSaving(true);
     setErr("");
     try {
-      await onSave({ ...form, beneficiaryId: typeDef?.requiresBeneficiary ? Number(form.beneficiaryId) : null });
+      await onSave({ ...form, beneficiaryId: typeDef?.requiresBeneficiary ? Number(form.beneficiaryId) : null, images });
       onClose();
     } catch (e) {
       setErr(e.message || "No se pudo guardar");
@@ -56,7 +60,11 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>TIPO</label>
           <select value={form.type} onChange={(e) => set("type", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-            {config.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+            {config.categories.map((cat) => (
+              <optgroup key={cat.name} label={cat.name}>
+                {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              </optgroup>
+            ))}
           </select>
         </div>
 
@@ -70,9 +78,27 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
           </div>
         )}
 
-        <div style={{ marginBottom: 4 }}>
+        <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>NOTAS (OPCIONAL)</label>
           <textarea value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} style={{ ...inputStyle, minHeight: 90, resize: "vertical" }} />
+        </div>
+
+        <div style={{ marginBottom: 4 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>FOTOS DE RESPALDO (OPCIONAL)</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+            {images.map((img, idx) => (
+              <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                <img src={img} alt="" style={{ width: 68, height: 52, objectFit: "cover", borderRadius: 6, border: "1px solid #e0e0e0", display: "block" }} />
+                <button
+                  onClick={() => removeImage(idx)}
+                  style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                >
+                  <Icon name="x" size={9} />
+                </button>
+              </div>
+            ))}
+            <AddImageBtn onAdd={addImage} />
+          </div>
         </div>
 
         {err && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 12 }}>{err}</p>}
@@ -141,6 +167,7 @@ export default function AttentionsTab() {
   const handleSave = async (form) => {
     const payload = {
       attentionDate: form.attentionDate, type: form.type, beneficiaryId: form.beneficiaryId, notes: form.notes,
+      images: form.images || [],
       ...(canManageAllRoles && { role: effectiveRole }),
     };
     if (modal && modal !== "new") {
@@ -247,7 +274,7 @@ export default function AttentionsTab() {
         <AttentionModal
           initial={modal === "new" ? null : {
             attentionDate: modal.attention_date?.slice(0, 10) || "", type: modal.type,
-            beneficiaryId: modal.beneficiary_id || "", notes: modal.notes,
+            beneficiaryId: modal.beneficiary_id || "", notes: modal.notes, images: modal.images || [],
           }}
           config={config}
           beneficiaries={beneficiaries}
@@ -280,6 +307,11 @@ export default function AttentionsTab() {
                 {a.notes && ` · ${a.notes.length > 60 ? `${a.notes.slice(0, 60)}...` : a.notes}`}
               </p>
             </div>
+            {a.images?.length > 0 && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `${PRIMARY}12`, color: PRIMARY, fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 20, flexShrink: 0 }}>
+                <Icon name="image" size={12} color={PRIMARY} /> {a.images.length}
+              </span>
+            )}
             {canEditDelete(a) && (
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => setModal(a)} title="Editar" style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", cursor: "pointer", display: "flex", color: "#6b7280" }}>

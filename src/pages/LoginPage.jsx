@@ -7,7 +7,6 @@ import Icon from "../components/ui/Icon";
 import PasswordInput from "../components/ui/PasswordInput";
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
 import GuatemalaFrame from "../components/layout/GuatemalaFrame";
-import { ImageWatermark } from "../components/ui/GuatemalanMotifs";
 
 const FEATURES = [
   { icon: "edit",    text: "Edita todo el contenido del sitio" },
@@ -78,10 +77,6 @@ export default function LoginPage() {
         padding: "48px 56px", color: "#fff",
         position: "relative", zIndex: 0, overflow: "hidden",
       }}>
-        <ImageWatermark name="tikal" tone="white" size={240} opacity={.16} position={{ bottom: -20, left: -30 }} />
-        <ImageWatermark name="mujer" tone="white" size={130} opacity={.22} position={{ top: 24, right: 20 }} />
-        <ImageWatermark name="quetzal" tone="white" size={90} opacity={.2} position={{ bottom: 30, right: -10 }} />
-
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 24, borderRadius: 10, background: "rgba(255,255,255,.08)", padding: 6 }} />
         ) : (
@@ -117,9 +112,6 @@ export default function LoginPage() {
         padding: "48px 56px",
         position: "relative", zIndex: 0, overflow: "hidden",
       }}>
-        <ImageWatermark name="escudo" tone="blue" size={150} opacity={.1} position={{ top: -30, right: -30 }} />
-        <ImageWatermark name="ceiba" tone="blue" size={160} opacity={.09} position={{ bottom: -30, left: -30 }} />
-
         <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
           <div style={{ marginBottom: 36 }}>
             <h2 style={{ fontSize: 28, fontWeight: 800, color: DARK, margin: "0 0 8px" }}>
