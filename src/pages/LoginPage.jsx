@@ -9,14 +9,6 @@ import GoogleLoginButton from "../components/auth/GoogleLoginButton";
 import GuatemalaFrame from "../components/layout/GuatemalaFrame";
 import { trimLogo } from "../utils/cloudinary";
 
-const FEATURES = [
-  { icon: "edit",    text: "Edita todo el contenido del sitio" },
-  { icon: "compass", text: "Gestiona pestañas y navegación" },
-  { icon: "image",   text: "Sube imágenes via Cloudinary" },
-  { icon: "eye",     text: "Controla qué secciones se muestran" },
-  { icon: "list",    text: "Administra equipo, programa y stats" },
-];
-
 export default function LoginPage() {
   const { isAdmin, login, content } = useApp();
   const logoUrl = trimLogo(content?.brand?.logoUrl);
@@ -79,9 +71,9 @@ export default function LoginPage() {
         position: "relative", zIndex: 0, overflow: "hidden",
       }}>
         {logoUrl ? (
-          <img src={logoUrl} alt="Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 24, borderRadius: 10, background: "rgba(255,255,255,.08)", padding: 6 }} />
+          <img src={logoUrl} alt="Logo" style={{ width: 220, height: 220, objectFit: "contain", marginBottom: 32, borderRadius: 24, background: "rgba(255,255,255,.08)", padding: 18 }} />
         ) : (
-          <svg width="72" height="72" viewBox="0 0 36 36" style={{ marginBottom: 24 }}>
+          <svg width="140" height="140" viewBox="0 0 36 36" style={{ marginBottom: 32 }}>
             <polygon points="18,4 32,30 4,30" fill="none" stroke="#e53935" strokeWidth="2" />
             <polygon points="18,4 26,20 10,20" fill="#fff" opacity=".9" />
             <line x1="10" y1="30" x2="18" y2="18" stroke="#fff" strokeWidth="2" />
@@ -91,18 +83,9 @@ export default function LoginPage() {
         <h1 style={{ fontSize: 34, fontWeight: 800, margin: "0 0 10px", letterSpacing: 2, textAlign: "center" }}>
           {siteName}
         </h1>
-        <p style={{ fontSize: 14, opacity: .7, textAlign: "center", marginBottom: 52, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 14, opacity: .7, textAlign: "center", margin: 0, lineHeight: 1.6 }}>
           Sistema de Administración Web
         </p>
-
-        <div style={{ width: "100%", maxWidth: 320, display: "flex", flexDirection: "column", gap: 18 }}>
-          {FEATURES.map(({ icon, text }) => (
-            <div key={text} style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(255,255,255,.08)", borderRadius: 10, padding: "14px 18px" }}>
-              <Icon name={icon} size={20} color="#fff" />
-              <span style={{ fontSize: 13, opacity: .9, lineHeight: 1.4 }}>{text}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* ── RIGHT LOGIN PANEL ── */}

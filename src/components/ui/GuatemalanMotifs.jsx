@@ -49,59 +49,114 @@ export function HuipilStripe({ height = 16, opacity = 1, style }) {
   );
 }
 
+// Una sola línea en zigzag ("jaspe"), trazada varias veces sobre el mismo
+// trazo con ancho decreciente (de más ancho/atrás a más angosto/al frente),
+// para que cada color se vea como una banda anidada dentro de la anterior
+// — el efecto de "montañas" o "llama" típico de los tejidos ikat
+// guatemaltecos que se ve en las fotos de referencia.
+function ChevronThreads({ x, w, H, colors, waves = 3 }) {
+  const period = H / waves;
+  const margin = w * 0.08; // deja aire para que el trazo más ancho no se salga de la banda
+  const left = x + margin, right = x + w - margin;
+  let d = `M${left} ${-period}`;
+  for (let k = -1; k <= waves + 1; k++) {
+    const yTop = k * period;
+    d += ` L${right} ${yTop + period / 2} L${left} ${yTop + period}`;
+  }
+  const n = colors.length;
+  return colors.map((color, i) => (
+    <path
+      key={i} d={d} fill="none" stroke={color}
+      strokeWidth={(w - margin) * ((n - i) / n)}
+      strokeLinejoin="round" strokeLinecap="round"
+    />
+  ));
+}
+
 /**
- * Vertical version of the huipil/corte stripe band: a red-ground warp-striped
- * "corte" weave — many thin parallel color threads plus one embroidered
- * diamond-chain band — modeled on traditional Guatemalan textile weaving,
- * not traced from any single piece. Purely decorative — runs the full
- * height of the page as a side border.
+ * Vertical version of the huipil/corte stripe band — varias bandas de zigzag
+ * "jaspe" en distintas paletas, separadas por líneas delgadas de acento
+ * (verde lima, morado, turquesa, oro), más una banda bordada de diamantes
+ * sobre fondo rojo. Inspirado en tejidos guatemaltecos reales, no calcado de
+ * ninguna pieza en particular. Puramente decorativo — corre a lo largo de
+ * toda la página como borde lateral.
  */
 export function HuipilStripeVertical({ width = 40, opacity = 1, style }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const patternId = `huipilv-${uid}`;
   const RED = "#a51c2c";
-  const BLACK = "#111111";
-  const CREAM = "#f2e8d8";
+  const DARK_RED = "#6e1420";
+  const BLACK = "#15131a";
+  const NAVY = "#1b1f3b";
   const PURPLE = "#6a3fa0";
+  const DEEP_PURPLE = "#4a2272";
   const TEAL = "#1f8fa8";
+  const AQUA = "#3fc1c9";
   const GREEN = "#2f7d4f";
+  const LIME = "#8fd13f";
   const GOLD = "#e0a52c";
+  const ORANGE = "#e2622b";
   const MAGENTA = "#c81e6b";
+  const PINK = "#ef7fb0";
+  const CREAM = "#f2e8d8";
   const WHITE = "#f4f7fb";
 
-  const H = width * 0.4; // repeat unit length along the stripe
-  // thin warp threads, as fractions of the stripe width
-  const threads = [
-    { x: 0.05,   w: 0.04,  color: BLACK },
-    { x: 0.105,  w: 0.03,  color: CREAM },
-    { x: 0.15,   w: 0.035, color: PURPLE },
-    { x: 0.2,    w: 0.11,  color: TEAL },
-    { x: 0.325,  w: 0.03,  color: PURPLE },
-    { x: 0.37,   w: 0.03,  color: CREAM },
-    { x: 0.54,   w: 0.04,  color: GREEN },
-    { x: 0.595,  w: 0.04,  color: GOLD },
-    { x: 0.65,   w: 0.035, color: BLACK },
-    { x: 0.765,  w: 0.03,  color: CREAM },
-    { x: 0.805,  w: 0.03,  color: BLACK },
+  const H = width * 1.1; // largo de la unidad que se repite a lo largo de la franja
+
+  // Líneas finas de acento, muy brillantes, igual que las que separan las
+  // bandas en los tejidos de referencia.
+  const accents = [
+    { x: 0.0,   w: 0.018, color: LIME },
+    { x: 0.238, w: 0.014, color: DEEP_PURPLE },
+    { x: 0.476, w: 0.014, color: AQUA },
+    { x: 0.714, w: 0.014, color: GOLD },
+    { x: 0.952, w: 0.014, color: LIME },
   ];
 
-  // embroidered diamond-chain band near the outer edge
-  const bandX = width * 0.88, bandW = width * 0.09, borderW = width * 0.0175;
-  const dcx = bandX + bandW / 2, dr = width * 0.0475;
+  // Tres bandas de zigzag "jaspe", cada una con su propia paleta — así se ve
+  // variado en vez de un solo color repetido, como en las fotos.
+  const bandA = { x: 0.028, w: 0.19 }; // morado / turquesa / rosa
+  const bandB = { x: 0.258, w: 0.19 }; // rojo / naranja / dorado
+  const bandC = { x: 0.73,  w: 0.2  }; // rosa / morado / turquesa
+
+  // Banda bordada de diamantes sobre fondo rojo (como el tejido cruzado de
+  // la foto de referencia), entre la banda B y la C.
+  const diamondBand = { x: 0.5, w: 0.2 };
+  const dcx = (diamondBand.x + diamondBand.w / 2) * width, dr = width * 0.05;
   const diamondPath = (cy) => `M${dcx} ${cy - dr} L${dcx + dr} ${cy} L${dcx} ${cy + dr} L${dcx - dr} ${cy} Z`;
+  const diamondColors = [TEAL, MAGENTA, GOLD, GREEN];
 
   return (
     <svg aria-hidden="true" width={width} height="100%" preserveAspectRatio="none" style={{ display: "block", pointerEvents: "none", opacity, ...style }}>
       <pattern id={patternId} width={width} height={H} patternUnits="userSpaceOnUse">
-        <rect width={width} height={H} fill={RED} />
-        {threads.map((t, i) => (
-          <rect key={i} x={width * t.x} width={width * t.w} height={H} fill={t.color} />
+        <rect width={width} height={H} fill={DARK_RED} />
+
+        <clipPath id={`${patternId}-a`}><rect x={bandA.x * width} width={bandA.w * width} height={H} /></clipPath>
+        <g clipPath={`url(#${patternId}-a)`}>
+          <rect x={bandA.x * width} width={bandA.w * width} height={H} fill={NAVY} />
+          <ChevronThreads x={bandA.x * width} w={bandA.w * width} H={H} colors={[PURPLE, TEAL, PINK, CREAM]} waves={4} />
+        </g>
+
+        <clipPath id={`${patternId}-b`}><rect x={bandB.x * width} width={bandB.w * width} height={H} /></clipPath>
+        <g clipPath={`url(#${patternId}-b)`}>
+          <rect x={bandB.x * width} width={bandB.w * width} height={H} fill={BLACK} />
+          <ChevronThreads x={bandB.x * width} w={bandB.w * width} H={H} colors={[RED, ORANGE, GOLD, CREAM]} waves={4} />
+        </g>
+
+        <rect x={diamondBand.x * width} width={diamondBand.w * width} height={H} fill={RED} />
+        {Array.from({ length: 3 }).map((_, i) => (
+          <path key={i} d={diamondPath(H * ((i + 0.5) / 3))} fill={diamondColors[i % diamondColors.length]} />
         ))}
-        <rect x={bandX - borderW} width={borderW} height={H} fill={WHITE} />
-        <rect x={bandX + bandW} width={borderW} height={H} fill={WHITE} />
-        <rect x={bandX} width={bandW} height={H} fill={RED} />
-        <path d={diamondPath(H * 0.25)} fill={TEAL} />
-        <path d={diamondPath(H * 0.75)} fill={MAGENTA} />
+
+        <clipPath id={`${patternId}-c`}><rect x={bandC.x * width} width={bandC.w * width} height={H} /></clipPath>
+        <g clipPath={`url(#${patternId}-c)`}>
+          <rect x={bandC.x * width} width={bandC.w * width} height={H} fill={DEEP_PURPLE} />
+          <ChevronThreads x={bandC.x * width} w={bandC.w * width} H={H} colors={[MAGENTA, PURPLE, TEAL, WHITE]} waves={4} />
+        </g>
+
+        {accents.map((a, i) => (
+          <rect key={i} x={a.x * width} width={a.w * width} height={H} fill={a.color} />
+        ))}
       </pattern>
       <rect width="100%" height="100%" fill={`url(#${patternId})`} />
     </svg>

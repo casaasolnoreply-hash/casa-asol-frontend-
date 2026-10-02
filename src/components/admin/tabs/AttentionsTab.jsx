@@ -4,6 +4,7 @@ import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import AddImageBtn from "../AddImageBtn";
+import ImageLightbox from "../ImageLightbox";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -11,9 +12,75 @@ const inputStyle = {
 };
 const selectStyle = { padding: "8px 12px", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: "inherit", color: "#374151", cursor: "pointer", background: "#fff" };
 
-function formatDate(iso) {
+export function formatDate(iso) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" });
+  // attention_date es una fecha de calendario ("2026-10-01"), no un instante
+  // exacto — construirla como medianoche LOCAL (sin la "Z" de UTC) evita que
+  // zonas horarias detrás de UTC (como Guatemala) la muestren un día antes.
+  return new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Detalle completo de una actividad: toda su información más su propia
+// galería de fotos (clic en una la abre en grande).
+function AttentionDetailModal({ attention, typeLabel, onClose }) {
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const images = attention.images || [];
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.48)", zIndex: 400 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "92vw", background: "#fff", borderRadius: 14, zIndex: 401, boxShadow: "0 24px 64px rgba(0,0,0,.22)", padding: "26px 28px 24px", maxHeight: "88vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{typeLabel(attention.type)}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "flex" }}><Icon name="x" size={20} /></button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20, fontSize: 13.5, color: "#374151" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Icon name="list" size={15} color="#9ca3af" />
+            <span><strong>Fecha:</strong> {formatDate(attention.attention_date)}</span>
+          </div>
+          {attention.beneficiary_name && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <Icon name="users" size={15} color="#9ca3af" />
+              <span><strong>Estudiante:</strong> {attention.beneficiary_name}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <Icon name="edit" size={15} color="#9ca3af" />
+            <span><strong>Registrado por:</strong> {attention.author_username}</span>
+          </div>
+          {attention.notes && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <Icon name="fileText" size={15} color="#9ca3af" style={{ flexShrink: 0, marginTop: 2 }} />
+              <span style={{ whiteSpace: "pre-wrap" }}><strong>Notas:</strong> {attention.notes}</span>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 8, letterSpacing: .5 }}>
+            GALERÍA {images.length > 0 && `(${images.length})`}
+          </label>
+          {images.length === 0 ? (
+            <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Este registro no tiene fotos de respaldo.</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
+              {images.map((img, idx) => (
+                <img
+                  key={idx} src={img} alt="" onClick={() => setLightboxIndex(idx)}
+                  style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 8, border: "1px solid #e0e0e0", cursor: "pointer" }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {lightboxIndex != null && (
+        <ImageLightbox images={images} index={lightboxIndex} onClose={() => setLightboxIndex(null)} onChangeIndex={setLightboxIndex} />
+      )}
+    </>
+  );
 }
 
 function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
@@ -127,10 +194,13 @@ export default function AttentionsTab() {
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null); // null | "new" | attention object
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [detailAttention, setDetailAttention] = useState(null); // null | attention object
 
   const [typeFilter, setTypeFilter] = useState("");
   const [beneficiaryFilter, setBeneficiaryFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const effectiveRole = canManageAllRoles ? selectedRole : authUser.role;
 
@@ -221,20 +291,33 @@ export default function AttentionsTab() {
     );
   }
 
+  const typeLabel = (key) => config.types.find((t) => t.key === key)?.label || key;
+
   const matchesSearch = (a) => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
-    const haystack = [a.beneficiary_name, a.notes, a.author_username].filter(Boolean).join(" ").toLowerCase();
+    const haystack = [typeLabel(a.type), a.beneficiary_name, a.notes, a.author_username].filter(Boolean).join(" ").toLowerCase();
     return haystack.includes(q);
+  };
+
+  // attention_date viene como "2026-10-02T00:00:00.000Z" — comparar solo la
+  // parte de fecha (YYYY-MM-DD) evita líos de huso horario en el filtro.
+  const dateOnly = (iso) => iso?.slice(0, 10);
+  const matchesDateRange = (a) => {
+    const d = dateOnly(a.attention_date);
+    if (!d) return true;
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
   };
 
   const filtered = list.filter((a) =>
     (!typeFilter || a.type === typeFilter) &&
     (!beneficiaryFilter || String(a.beneficiary_id) === beneficiaryFilter) &&
+    matchesDateRange(a) &&
     matchesSearch(a)
   );
 
-  const typeLabel = (key) => config.types.find((t) => t.key === key)?.label || key;
   const canEditDelete = (a) => a.author_username === authUser.user || canManageAllRoles;
   const beneficiariesWithHistory = beneficiaries.filter((b) => list.some((a) => a.beneficiary_id === b.id));
 
@@ -254,17 +337,37 @@ export default function AttentionsTab() {
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ position: "relative" }}>
           <Icon name="eye" size={13} color="#9ca3af" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)" }} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por estudiante o nota..." style={{ ...inputStyle, width: 240, paddingLeft: 30 }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por actividad, estudiante o nota..." style={{ ...inputStyle, width: 260, paddingLeft: 30 }} />
         </div>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={selectStyle}>
-          <option value="">Cualquier tipo</option>
-          {config.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+          <option value="">Cualquier actividad</option>
+          {config.categories.map((cat) => (
+            <optgroup key={cat.name} label={cat.name}>
+              {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+            </optgroup>
+          ))}
         </select>
         {beneficiariesWithHistory.length > 0 && (
           <select value={beneficiaryFilter} onChange={(e) => setBeneficiaryFilter(e.target.value)} style={selectStyle}>
             <option value="">Todos los estudiantes</option>
             {beneficiariesWithHistory.map((b) => <option key={b.id} value={b.id}>{b.full_name}</option>)}
           </select>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>DESDE</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 150 }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600 }}>HASTA</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...inputStyle, width: 150 }} />
+        </div>
+        {(search || typeFilter || beneficiaryFilter || dateFrom || dateTo) && (
+          <button
+            onClick={() => { setSearch(""); setTypeFilter(""); setBeneficiaryFilter(""); setDateFrom(""); setDateTo(""); }}
+            style={{ background: "none", border: "none", color: PRIMARY, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "6px 4px" }}
+          >
+            Limpiar filtros
+          </button>
         )}
       </div>
 
@@ -312,8 +415,12 @@ export default function AttentionsTab() {
                 <Icon name="image" size={12} color={PRIMARY} /> {a.images.length}
               </span>
             )}
-            {canEditDelete(a) && (
-              <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => setDetailAttention(a)} title="Ver" style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", cursor: "pointer", display: "flex", color: "#6b7280" }}>
+                <Icon name="eye" size={13} />
+              </button>
+              {canEditDelete(a) && (
+                <>
                 <button onClick={() => setModal(a)} title="Editar" style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", cursor: "pointer", display: "flex", color: "#6b7280" }}>
                   <Icon name="edit" size={13} />
                 </button>
@@ -327,11 +434,20 @@ export default function AttentionsTab() {
                     <Icon name="trash" size={13} />
                   </button>
                 )}
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
+
+      {detailAttention && (
+        <AttentionDetailModal
+          attention={detailAttention}
+          typeLabel={typeLabel}
+          onClose={() => setDetailAttention(null)}
+        />
+      )}
     </div>
   );
 }

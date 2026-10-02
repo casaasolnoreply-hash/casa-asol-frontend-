@@ -20,6 +20,7 @@ import RolesTab       from "../components/admin/tabs/RolesTab";
 import EstudiantesTab from "../components/admin/tabs/EstudiantesTab";
 import MiInformeTab   from "../components/admin/tabs/MiInformeTab";
 import AttentionsTab  from "../components/admin/tabs/AttentionsTab";
+import GaleriaTab     from "../components/admin/tabs/GaleriaTab";
 import DashboardTab   from "../components/admin/tabs/DashboardTab";
 
 /* ── Site content items ── */
@@ -53,6 +54,7 @@ const ALL_TABS = [
   { id: "mensajes",    icon: "mail",  label: "Mensajes" },
   { id: "estudiantes", icon: "users", label: "Estudiantes" },
   { id: "atenciones",  icon: "list",  label: "Actividades" },
+  { id: "galeria",     icon: "image", label: "Galería de imágenes" },
   { id: "mi-informe",  icon: "list",  label: "Mi informe" },
   ...ACCOUNT_TABS, ...CONFIG_TABS,
   { id: "inicio", icon: "home", label: "Inicio" },
@@ -232,6 +234,7 @@ export default function AdminPage() {
       case "roles":        return <RolesTab />;
       case "estudiantes":  return <EstudiantesTab />;
       case "atenciones":   return <AttentionsTab />;
+      case "galeria":      return <GaleriaTab />;
       case "mi-informe":   return <MiInformeTab />;
       case "inicio":       return canReviewReports ? (
         <DashboardTab onGoToReports={() => setTab("mi-informe")} />
@@ -303,6 +306,7 @@ export default function AdminPage() {
           {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
           <NavBtn id="estudiantes" icon="users" label="Estudiantes" />
           {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
+          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="galeria" icon="image" label="Galería de imágenes" />}
           <NavBtn id="mi-informe" icon="list" label={isOperationalRole ? "Mi informe" : "Informes"} />
 
           {canViewMessages && (
