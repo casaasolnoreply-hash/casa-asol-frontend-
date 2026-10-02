@@ -49,7 +49,7 @@ export default function GoogleLoginButton() {
     script.onload = () => {
       if (!window.google || !btnRef.current) return;
       window.google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleCredential });
-      window.google.accounts.id.renderButton(btnRef.current, { theme: "outline", size: "large", width: 320, text: "continue_with" });
+      window.google.accounts.id.renderButton(btnRef.current, { theme: "outline", size: "medium", width: 280, shape: "pill", text: "continue_with" });
     };
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };

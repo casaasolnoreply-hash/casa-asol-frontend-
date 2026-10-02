@@ -7,6 +7,7 @@ import ForgotAccessPage       from "./pages/ForgotAccessPage";
 import AdminPage               from "./pages/AdminPage";
 import ForcePasswordChangePage from "./pages/ForcePasswordChangePage";
 import MaintenancePage         from "./pages/MaintenancePage";
+import NotFoundPage            from "./pages/NotFoundPage";
 
 function ProtectedRoute({ children }) {
   const { isAdmin, authUser } = useApp();
@@ -27,7 +28,7 @@ export default function App() {
       <Route path="/solicitar-acceso" element={<RequestAccessPage />} />
       <Route path="/olvide-mi-acceso" element={<ForgotAccessPage />} />
       <Route path="/admin"           element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-      <Route path="*"                element={<Navigate to="/" replace />} />
+      <Route path="*"                element={<NotFoundPage />} />
     </Routes>
   );
 }
