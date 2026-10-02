@@ -1,12 +1,13 @@
 import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import { UI } from "../../i18n/translations";
+import { trimLogo } from "../../utils/cloudinary";
 import { MayaPatternBar, HuipilStripe } from "../ui/GuatemalanMotifs";
 
 export default function Footer() {
   const { content, language, contentTranslations } = useApp();
   const t = UI[language];
-  const logoUrl = content.brand?.logoUrl;
+  const logoUrl = trimLogo(content.brand?.logoUrl);
   const siteName = content.brand?.siteName || "Casa ASOL";
   const footerDesc = language === "es" ? content.footer.desc : (contentTranslations[language]?.footer?.desc || content.footer.desc);
 

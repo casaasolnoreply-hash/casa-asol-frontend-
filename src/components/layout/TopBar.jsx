@@ -30,7 +30,7 @@ function LanguageDropdown({ language, setLanguage }) {
           display: "inline-flex", alignItems: "center", gap: 6, background: PRIMARY,
           border: "none", borderRadius: 999, padding: "7px 14px",
           color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-          boxShadow: `0 4px 14px ${PRIMARY}80`,
+          boxShadow: `0 4px 14px ${PRIMARY}80`, whiteSpace: "nowrap", flexShrink: 0,
         }}
       >
         <Icon name="globe" size={14} color="#fff" />
@@ -100,7 +100,7 @@ export default function TopBar() {
           <span><strong>{t.topbar.telefono}</strong> {topbar.phone}</span>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <LanguageDropdown language={language} setLanguage={setLanguage} />
 
           {socialLinks.map(({ key, icon }) => {
@@ -124,14 +124,14 @@ export default function TopBar() {
           {isAdmin ? (
             <button
               onClick={() => navigate("/admin")}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
             >
               <Icon name="settings" size={13} color="#fff" /> {t.topbar.admin}
             </button>
           ) : (
             <button
               onClick={() => navigate("/login")}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "transparent", color: "#c6ceda", border: "1px solid rgba(255,255,255,.2)", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "transparent", color: "#c6ceda", border: "1px solid rgba(255,255,255,.2)", borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
             >
               <Icon name="logout" size={13} color="#c6ceda" /> {t.topbar.login}
             </button>

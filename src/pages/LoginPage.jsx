@@ -7,6 +7,7 @@ import Icon from "../components/ui/Icon";
 import PasswordInput from "../components/ui/PasswordInput";
 import GoogleLoginButton from "../components/auth/GoogleLoginButton";
 import GuatemalaFrame from "../components/layout/GuatemalaFrame";
+import { trimLogo } from "../utils/cloudinary";
 
 const FEATURES = [
   { icon: "edit",    text: "Edita todo el contenido del sitio" },
@@ -18,7 +19,7 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { isAdmin, login, content } = useApp();
-  const logoUrl = content?.brand?.logoUrl;
+  const logoUrl = trimLogo(content?.brand?.logoUrl);
   const siteName = content?.brand?.siteName || "Casa ASOL";
   const navigate = useNavigate();
   const [user,    setUser]    = useState("");

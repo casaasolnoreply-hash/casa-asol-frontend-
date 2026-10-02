@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { PRIMARY } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import { UI } from "../../i18n/translations";
+import { trimLogo } from "../../utils/cloudinary";
 import Icon from "../ui/Icon";
 import { HuipilStripeVertical } from "../ui/GuatemalanMotifs";
 
@@ -25,7 +26,7 @@ export default function Navbar() {
   const closeAll = () => { setOpenMenu(null); setOpenSub(null); };
 
   const visible = navItems.filter((x) => x.enabled);
-  const logoUrl = content.brand?.logoUrl;
+  const logoUrl = trimLogo(content.brand?.logoUrl);
   const siteName = content.brand?.siteName || "Casa ASOL";
   const nameWords = siteName.trim().split(/\s+/);
   const nameLast = nameWords.pop();

@@ -52,7 +52,7 @@ const ALL_TABS = [
   ...SITE_TABS,
   { id: "mensajes",    icon: "mail",  label: "Mensajes" },
   { id: "estudiantes", icon: "users", label: "Estudiantes" },
-  { id: "atenciones",  icon: "list",  label: "Expediente de atenciones" },
+  { id: "atenciones",  icon: "list",  label: "Actividades" },
   { id: "mi-informe",  icon: "list",  label: "Mi informe" },
   ...ACCOUNT_TABS, ...CONFIG_TABS,
   { id: "inicio", icon: "home", label: "Inicio" },
@@ -302,7 +302,7 @@ export default function AdminPage() {
           </div>
           {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
           <NavBtn id="estudiantes" icon="users" label="Estudiantes" />
-          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Expediente de atenciones" />}
+          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
           <NavBtn id="mi-informe" icon="list" label={isOperationalRole ? "Mi informe" : "Informes"} />
 
           {canViewMessages && (

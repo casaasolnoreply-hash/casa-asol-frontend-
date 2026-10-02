@@ -660,7 +660,7 @@ function CalculateFromAttentionsButton({ calculating, onClick }) {
         <Icon name="cloud" size={13} /> {calculating ? "Calculando..." : "Calcular desde el expediente"}
       </button>
       <p style={{ margin: 0, fontSize: 12, color: "#1e40af" }}>
-        Cuenta las atenciones que ya registraste en "Expediente de atenciones" durante este periodo y llena los campos de abajo automáticamente. Sigue siendo editable: si algo no quedó registrado ahí, puedes corregirlo a mano.
+        Cuenta las atenciones que ya registraste en "Actividades" durante este periodo y llena los campos de abajo automáticamente. Sigue siendo editable: si algo no quedó registrado ahí, puedes corregirlo a mano.
       </p>
     </div>
   );
@@ -916,7 +916,7 @@ function RejectedEditModal({ report, config, roleLabel, canManageAllRoles, effec
         const rows = (summary[f.sourceType]?.series || []).map((s) => ({ label: formatBucketLabel(s.bucket, granularity), value: s.value }));
         setDraft((d) => ({ ...d, stats: { ...d.stats, [f.key]: { granularity, rows } } }));
       }
-      setNotice("Totales calculados desde el expediente de atenciones. Puedes editarlos si algo no quedó registrado ahí.");
+      setNotice("Totales calculados desde Actividades. Puedes editarlos si algo no quedó registrado ahí.");
     } catch (e) {
       setError(e.message || "No se pudo calcular desde el expediente");
     } finally {
@@ -1351,7 +1351,7 @@ export default function MiInformeTab() {
         const rows = (summary[f.sourceType]?.series || []).map((s) => ({ label: formatBucketLabel(s.bucket, granularity), value: s.value }));
         setDraft((d) => ({ ...d, stats: { ...d.stats, [f.key]: { granularity, rows } } }));
       }
-      setNotice("Totales calculados desde el expediente de atenciones. Puedes editarlos si algo no quedó registrado ahí.");
+      setNotice("Totales calculados desde Actividades. Puedes editarlos si algo no quedó registrado ahí.");
     } catch (e) {
       setError(e.message || "No se pudo calcular desde el expediente");
     } finally {

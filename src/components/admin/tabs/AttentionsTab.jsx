@@ -204,7 +204,7 @@ export default function AttentionsTab() {
     return (
       <div style={{ textAlign: "center", padding: "56px 24px", background: "#f9fafb", borderRadius: 12, border: "2px dashed #e0e0e0" }}>
         <Icon name="warning" size={36} color="#d1d5db" />
-        <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>Todavía no hay ningún rol con expediente de atenciones configurado.</p>
+        <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>Todavía no hay ningún rol con actividades configuradas.</p>
       </div>
     );
   }
@@ -215,7 +215,7 @@ export default function AttentionsTab() {
         {roleSelector}
         <div style={{ textAlign: "center", padding: "56px 24px", background: "#f9fafb", borderRadius: 12, border: "2px dashed #e0e0e0" }}>
           <Icon name="warning" size={36} color="#d1d5db" />
-          <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>Tu rol todavía no tiene expediente de atenciones configurado.</p>
+          <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>Tu rol todavía no tiene actividades configuradas.</p>
         </div>
       </div>
     );
@@ -243,7 +243,7 @@ export default function AttentionsTab() {
       {roleSelector}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Expediente de atenciones</h2>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Actividades</h2>
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>{config.label} — registro individual de cada atención, taller o reunión</p>
         </div>
         <button onClick={() => setModal("new")} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>

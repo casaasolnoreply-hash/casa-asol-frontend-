@@ -1,5 +1,6 @@
 import { PRIMARY } from "../../../constants/theme";
 import { useApp } from "../../../context/AppContext";
+import { trimLogo } from "../../../utils/cloudinary";
 import ImageUpload from "../ImageUpload";
 import AddImageBtn from "../AddImageBtn";
 import Icon from "../../ui/Icon";
@@ -40,8 +41,8 @@ export default function ImagesTab() {
       <Card title="Logo del sitio" desc="Aparece en la barra de navegación y el pie de página. Deja vacío para usar el logo predeterminado.">
         {content.brand?.logoUrl && (
           <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f9fafb", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 14 }}>
-            <img src={content.brand.logoUrl} alt="Logo actual" style={{ height: 52, maxWidth: 180, objectFit: "contain" }} />
-            <span style={{ fontSize: 12, color: "#6b7280" }}>Logo actual</span>
+            <img src={trimLogo(content.brand.logoUrl)} alt="Logo actual" style={{ height: 52, maxWidth: 180, objectFit: "contain" }} />
+            <span style={{ fontSize: 12, color: "#6b7280" }}>Logo actual (recortado como se ve en el sitio)</span>
           </div>
         )}
         <ImageUpload

@@ -5,6 +5,7 @@ import {
   DEFAULT_TEAM, DEFAULT_NAV, DEFAULT_SECTIONS,
 } from "../constants/defaults";
 import { CONTENT_TRANSLATIONS, buildAutoTranslationShape, mergeTranslations, detectBrowserLanguage } from "../i18n/translations";
+import { trimLogo } from "../utils/cloudinary";
 
 const AppContext = createContext(null);
 
@@ -184,7 +185,7 @@ export function AppProvider({ children }) {
 
   /* ── Ícono de la pestaña (favicon), sincronizado con el logo subido ── */
   useEffect(() => {
-    const logoUrl = content.brand?.logoUrl;
+    const logoUrl = trimLogo(content.brand?.logoUrl);
     if (!logoUrl) return; // sin logo propio, se deja el ícono por defecto de index.html
     const link = document.getElementById("favicon");
     if (link) link.href = logoUrl;

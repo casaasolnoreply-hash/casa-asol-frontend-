@@ -1,7 +1,10 @@
 export const DEFAULT_CONTENT = {
-  brand: { logoUrl: "", siteName: "Casa ASOL" },
+  brand: {
+    logoUrl: "https://res.cloudinary.com/zzynjaat/image/upload/v1790824838/casa-asol/ofm8a2uzwm3kzhtzyhgg.png",
+    siteName: "Asociación Solidaridad para la Educación y Cultura (ASOL)",
+  },
   topbar: {
-    address: "01 A Calle 09-34, Ciudad de Guatemala, 01016, Guatemala",
+    address: "01 AVENIDA 09-34, Cdad. de Guatemala",
     locationUrl: "",
     phone: "(+502) 2255 9450",
     facebook: "https://www.facebook.com/CasaASOL/",
@@ -10,9 +13,12 @@ export const DEFAULT_CONTENT = {
   },
   hero: {
     bgUrl: "",
-    images: [],
-    title: "CASA ESTUDIANTIL ASOL",
-    subtitle: "Promovemos el desarrollo integral, la educación y la protección de mujeres adolescentes indígenas en situación de vulnerabilidad en Guatemala.",
+    images: [
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790225970/casa-asol/btrfk1trfnqmfvfl5v94.jpg",
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790226002/casa-asol/pkl8iyunidppiyktp7os.jpg",
+    ],
+    title: "Asociación Solidaridad para la Educación y Cultura (ASOL)",
+    subtitle: "Impulsamos el desarrollo, la educación y la protección de adolescentes en situación de vulnerabilidad en Guatemala, con énfasis en mujeres jóvenes indígenas",
     btn1Text: "CONOCER MÁS",
     btn1Href: "#programa",
     btn2Text: "AYUDAR Y DONAR",
@@ -26,13 +32,17 @@ export const DEFAULT_CONTENT = {
     supertitle: "NUESTRA HISTORIA",
     title: "Un sueño que se convirtió en hogar",
     paragraphs: [
-      "Casa ASOL nació en 2009 con la misión de brindar un espacio seguro para niños y jóvenes guatemaltecos en situación de vulnerabilidad. Fundada por un grupo de voluntarios austriacos y guatemaltecos, la casa comenzó con tan solo 8 estudiantes en una pequeña vivienda de la Zona 16.",
-      "Con el paso de los años, ASOL ha crecido hasta convertirse en un referente de protección estudiantil en Guatemala, combinando el apoyo académico, emocional y social para garantizar que cada niño tenga la oportunidad de construir un futuro digno.",
+      "La Casa Estudiantil ASOL fue fundada en 1989 gracias a la iniciativa de maestros del Instituto Austriaco Guatemalteco, Werner Römich y Marco Roca, con el apoyo de organizaciones y cooperantes austríacos comprometidos con ampliar las oportunidades educativas para la niñez y juventud guatemalteca. En 1992 se constituyó formalmente la Asociación Solidaridad para la Educación y la Cultura (ASOL), una asociación sin fines de lucros inscrito legalmente en el Registro de Personas Jurídicas y la Superintendencia de Administración Tributaria.",
+      "A lo largo de su historia, ASOL ha crecido de una pequeña residencia para estudiantes a un centro educativo y de protección con capacidad para atender a decenas de adolescentes. Este desarrollo ha sido posible gracias al apoyo continuo de donantes, padrinos y aliados internacionales, que han contribuido a la mejora de la infraestructura y los servicios ofrecidos.\nLa organización ha contado con diferentes equipos de dirección y con el valioso apoyo de personas voluntarias nacionales e internacionales, quienes han fortalecido el acompañamiento diario de las y los participantes.\n",
+      "Tras más de tres décadas de trabajo, ASOL ha acompañado a más de 500 niñas, niños, adolescentes y jóvenes en su proceso educativo, contribuyendo a la formación de profesionales en diversas áreas y generando oportunidades para la construcción de proyectos de vida dignos. Su trayectoria refleja un compromiso sostenido con la educación, la protección y el desarrollo integral de la juventud guatemalteca.",
     ],
     quote: "Cada niño que llega a ASOL trae consigo una historia de resiliencia. Nuestro trabajo es asegurarnos de que esa historia tenga un final brillante.",
-    quoteAuthor: "— Fundadora, Casa ASOL",
+    quoteAuthor: "— Fundador, Werner Römich ",
     imageUrl: "",
-    images: [],
+    images: [
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790226293/casa-asol/db7h1jgfnv0ojt5l8syi.jpg",
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790226298/casa-asol/u8w82ahxsbtzjgs0ijpz.jpg",
+    ],
   },
   financiacion: {
     supertitle: "AYUDAR Y DONAR",
@@ -104,7 +114,7 @@ export const DEFAULT_CONTENT = {
     supertitle: "CONTACTO",
     title: "Ponte en contacto con nosotros",
     items: [
-      { icon: "location", title: "Dirección", val: "01 A Calle 09-34, Ciudad de Guatemala, 01016, Guatemala" },
+      { icon: "location", title: "Dirección", val: "01 AVENIDA 09-34, Cdad. de Guatemala" },
       { icon: "phone",    title: "Teléfono", val: "(+502) 2255 9450 · 5926 2580 · 5396 7179" },
       { icon: "mail",     title: "Correo", val: "asolguate1990@gmail.com · direccion@asol-onmicrosoft.com" },
       { icon: "clock",    title: "Horario", val: "Lunes a Viernes, 8:00 – 17:00 hrs" },
@@ -126,7 +136,10 @@ export const DEFAULT_PROGRAMA = [
   {
     id: 1, icon: "home", title: "Casa Estudiantil ASOL",
     desc: "Nuestro principal mecanismo de protección: un hogar seguro y temporal para adolescentes y jóvenes mientras superan las condiciones de riesgo que motivaron su ingreso. Brinda educación, atención psicológica, formación en derechos humanos y fortalecimiento de la identidad cultural, con miras a la reintegración familiar o la autonomía.",
-    images: [],
+    images: [
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790233246/casa-asol/qhqsiwc4nsstdzshzbw9.jpg",
+      "https://res.cloudinary.com/zzynjaat/image/upload/v1790233270/casa-asol/lkndrwkuyi9beamcvnbs.jpg",
+    ],
     full: [
       "Casa ASOL constituye el principal mecanismo de protección especializada dentro de las estrategias de trabajo de la asociación. Funciona como un espacio seguro, abierto y protector donde adolescentes y jóvenes pueden residir temporalmente mientras se superan las condiciones de riesgo que motivaron su ingreso. Implementa un modelo de atención integral que se fundamenta en el enfoque de derechos humanos, el interés superior de la niñez y adolescencia, la igualdad de género, la protección integral, la pertinencia cultural, la participación juvenil y el fortalecimiento de las capacidades individuales, familiares y comunitarias. El modelo concibe a las y los jóvenes como sujetos de derechos y protagonistas de su propio desarrollo, promoviendo la construcción de proyectos de vida autónomos, sostenibles y libres de violencia. Su finalidad es prevenir la profundización de situaciones de vulnerabilidad, garantizar el acceso a servicios de protección y educación de calidad, y facilitar procesos progresivos de reintegración familiar, inclusión social y autonomía económica.",
       "En este entorno reciben:",
@@ -143,7 +156,7 @@ export const DEFAULT_PROGRAMA = [
   {
     id: 2, icon: "users", title: "Reintegración Familiar",
     desc: "Becas externas para jóvenes que pueden permanecer en sus comunidades pero enfrentan barreras económicas para estudiar. Incluyen formación mensual en ciudadanía, derechos y autocuidado, además de un encuentro anual entre becadas externas e internas.",
-    images: [],
+    images: ["https://res.cloudinary.com/zzynjaat/image/upload/v1790233299/casa-asol/mzm89q1rqin03frhegzx.jpg"],
     full: [
       "La segunda línea de atención está conformada por el programa de becas externas que constituye una herramienta clave dentro de las estrategias de egreso, asegurando la continuidad educativa de quienes retornan al entorno familiar. Está dirigido a jóvenes que cuentan con condiciones familiares adecuadas para permanecer en sus comunidades, pero enfrentan barreras económicas o sociales para continuar sus estudios, después de haber vivido situaciones de violencia, vulnerabilidad o exclusión social.",
       "Las becas cubren necesidades educativas y facilitan el acceso y permanencia en el sistema educativo, contribuyendo simultáneamente al fortalecimiento familiar y comunitario. Se acompañan con procesos de formación virtual una vez al mes por 2 horas en ciudadanía, derechos individuales y colectivos, autoestima, autocuidado y atención psicológica en línea según las necesidades individuales. Una vez al año se realiza un encuentro presencial entre las becadas externas e internas para intercambiar experiencias.",
@@ -152,7 +165,7 @@ export const DEFAULT_PROGRAMA = [
   {
     id: 3, icon: "utensils", title: "Vida Independiente",
     desc: "Alojamiento seguro a bajo costo y formación técnica y ocupacional —como panadería y pastelería— para que las participantes adquieran experiencia laboral, generen ingresos propios y construyan proyectos de vida libres de violencia.",
-    images: [],
+    images: ["https://res.cloudinary.com/zzynjaat/image/upload/v1790233319/casa-asol/ib9w4gdscacq21m9nl4d.jpg"],
     full: [
       "Esta línea ofrece apoyo mediante espacios seguros de alojamiento a costo bajo y procesos de formación técnica y ocupacional. A través de iniciativas productivas como la panadería y pastelería, las participantes adquieren competencias laborales, experiencia práctica y habilidades para la gestión de ingresos, fortaleciendo su autonomía económica y su capacidad de construir proyectos de vida libres de violencia.",
       "Como para muchas mujeres sobrevivientes de violencia la integración laboral es sumamente difícil, especialmente si tienen a su cargo menores de edad, se ofrece un programa de integración laboral asistida, en cuyo marco las mujeres pueden trabajar en la panadería de ASOL para generar un ingreso en un entorno seguro y acompañado. La Panadería ASOL actualmente produce el pan que se consume en Casa ASOL y próximamente ampliará su producción para realizar ventas externas.",
@@ -161,7 +174,7 @@ export const DEFAULT_PROGRAMA = [
   {
     id: 4, icon: "compass", title: "Proyección Comunitaria",
     desc: "Alianzas con actores locales para prevenir la violencia y la exclusión mediante talleres, refuerzo académico y actividades culturales. Incluye nuestro Centro de Aprendizaje Ecológico y Tecnológico, con paneles solares, biodigestores y eco-senderos.",
-    images: [],
+    images: ["https://res.cloudinary.com/zzynjaat/image/upload/v1790233328/casa-asol/bbrq9abnjc3zfyjhysbm.jpg"],
     full: [
       "La cuarta línea de acción amplía el impacto del modelo de protección hacia la comunidad mediante alianzas con actores locales, como la Iglesia Católica, el Instituto por Cooperativa de Santa Rosita y otras organizaciones comunitarias y educativas. Estas alianzas generan oportunidades educativas, formativas y recreativas para prevenir la violencia de género, la exclusión social y el reclutamiento de adolescentes y jóvenes por pandillas.",
       "Las acciones incluyen reforzamiento académico, orientación vocacional y ocupacional con enfoque de género, talleres sobre derechos humanos, equidad de género y prevención de violencia, así como actividades culturales, deportivas y recreativas en los espacios de ASOL. Asimismo, en coordinación con los socios locales se desarrollan cursos de capacitación laboral y formación técnica que fortalecen las oportunidades de empleo, emprendimiento y autonomía económica de la juventud.",
