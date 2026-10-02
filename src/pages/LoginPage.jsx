@@ -94,7 +94,7 @@ export default function LoginPage() {
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
         padding: "48px 56px",
-        position: "relative", zIndex: 0, overflow: "hidden",
+        position: "relative", zIndex: 0, overflowY: "auto", overflowX: "hidden",
       }}>
         <div style={{ width: "100%", maxWidth: 380, position: "relative" }}>
           <div style={{ marginBottom: 36 }}>
