@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import {
   DEFAULT_CONTENT, DEFAULT_STATS, DEFAULT_PROGRAMA,
@@ -232,8 +233,23 @@ export function AppProvider({ children }) {
   /* ── UI ── */
   const [expandModal, setExpandModal] = useState(null);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const scrollTo = (href) => {
-    const el = document.getElementById((href || "").replace("#", ""));
+    const id = (href || "").replace("#", "");
+    if (location.pathname !== "/") {
+      navigate("/");
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(id);
+        if (el) { el.scrollIntoView({ behavior: "smooth" }); return; }
+        if (attempts++ < 20) setTimeout(tryScroll, 50);
+      };
+      setTimeout(tryScroll, 50);
+      return;
+    }
+    const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
