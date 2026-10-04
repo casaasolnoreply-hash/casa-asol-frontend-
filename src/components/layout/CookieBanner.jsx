@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { PRIMARY, DARK } from "../../constants/theme";
 
@@ -6,6 +6,7 @@ const STORAGE_KEY = "ca-cookie-consent";
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
+  const barRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -15,6 +16,21 @@ export default function CookieBanner() {
     }
   }, []);
 
+  // Reserva en el body el mismo espacio que ocupa la barra fija, para que
+  // nunca quede tapando contenido real (como los links del footer) debajo.
+  useEffect(() => {
+    if (!visible) return;
+    const updatePadding = () => {
+      if (barRef.current) document.body.style.paddingBottom = `${barRef.current.offsetHeight}px`;
+    };
+    updatePadding();
+    window.addEventListener("resize", updatePadding);
+    return () => {
+      window.removeEventListener("resize", updatePadding);
+      document.body.style.paddingBottom = "";
+    };
+  }, [visible]);
+
   const accept = () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ accepted: true, date: new Date().toISOString() })); } catch {}
     setVisible(false);
@@ -23,7 +39,7 @@ export default function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div style={{
+    <div ref={barRef} style={{
       position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 999,
       background: DARK, color: "#dfe3ea",
       padding: "18px 24px",
