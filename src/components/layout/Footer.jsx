@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { PRIMARY, PRIMARY_LIGHT, DARK } from "../../constants/theme";
 import { useApp } from "../../context/AppContext";
 import { UI } from "../../i18n/translations";
@@ -65,7 +66,13 @@ export default function Footer() {
         </div>
       </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", padding: "20px 0", textAlign: "center", fontSize: 12, color: "#697280" }}>
-        © {new Date().getFullYear()} {siteName}. {t.footer.rights}
+        <p style={{ margin: "0 0 8px" }}>
+          © {new Date().getFullYear()} {siteName}. {t.footer.rights}
+        </p>
+        <p style={{ margin: 0, display: "flex", justifyContent: "center", gap: 16 }}>
+          <Link to="/terminos-y-condiciones" style={{ color: "#8a93a3", textDecoration: "none" }}>Términos y Condiciones</Link>
+          <Link to="/politica-de-privacidad" style={{ color: "#8a93a3", textDecoration: "none" }}>Política de Privacidad y Cookies</Link>
+        </p>
       </div>
 
       <style>{`
