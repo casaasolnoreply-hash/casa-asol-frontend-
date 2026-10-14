@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { PRIMARY } from "../../../constants/theme";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
+import Toggle from "../../ui/Toggle";
 
 // Permisos simples (sí/no): no tienen un sentido de "otros roles" —
 // son sobre lo que el propio rol puede hacer, así que un solo
 // interruptor basta.
 const SIMPLE_PERMISSIONS = [
-  { key: "viewMessages",     label: "Ver mensajes de contacto y voluntariado" },
-  { key: "crearInformes",    label: "Puede llenar su propio informe periódico" },
-  { key: "verEstudiantes",   label: "Ver la lista de estudiantes" },
-  { key: "crearActividades", label: "Puede registrar actividades" },
+  { key: "viewMessages",     icon: "mail",  label: "Ver mensajes de contacto y voluntariado", hint: "Puede abrir la bandeja de mensajes recibidos del sitio público." },
+  { key: "crearInformes",    icon: "list",  label: "Llenar su propio informe periódico",      hint: "Puede abrir \"Mi informe\" y enviar su propio reporte." },
+  { key: "verEstudiantes",   icon: "users", label: "Ver la lista de estudiantes",             hint: "Puede abrir la pestaña \"Estudiantes\" del panel." },
+  { key: "crearActividades", icon: "image", label: "Registrar actividades",                   hint: "Puede abrir \"Actividades\" y \"Galería\" y crear registros nuevos." },
 ];
 
 // Permisos "escalables": cada uno puede ser Todos / Algunos (una
@@ -19,12 +20,41 @@ const SIMPLE_PERMISSIONS = [
 // le quita a nadie ver lo suyo propio: solo bloquea ver/actuar sobre
 // lo de los demás.
 const SCOPED_PERMISSIONS = [
-  { key: "verImagenes",           label: "Ver imágenes de actividades de otros roles (Galería)" },
-  { key: "verInformes",           label: "Ver informes de otros roles" },
-  { key: "verInformesPorUsuario", label: "Revisar y aceptar/devolver informes de otros roles" },
+  { key: "verImagenes",           icon: "image",    label: "Ver imágenes de otros roles",        hint: "En la Galería, además de sus propias fotos, puede ver las de los roles que elijas aquí." },
+  { key: "verInformes",           icon: "barChart",  label: "Ver informes de otros roles",        hint: "En \"Informes\", además de lo suyo, puede ver los reportes de los roles que elijas aquí." },
+  { key: "verInformesPorUsuario", icon: "check",     label: "Revisar informes de otros roles",    hint: "Puede aceptar o devolver los informes enviados por los roles que elijas aquí." },
 ];
 
-const selectStyle = { padding: "5px 8px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 12, fontFamily: "inherit", cursor: "pointer", background: "#fff" };
+const SEGMENTS = [
+  { value: "all",  label: "Todos" },
+  { value: "some", label: "Algunos" },
+  { value: "none", label: "Solo lo propio" },
+];
+
+function Segmented({ value, onChange, disabled }) {
+  return (
+    <div style={{ display: "inline-flex", border: "1px solid #e0e0e0", borderRadius: 8, padding: 2, background: "#f7f8fa", opacity: disabled ? .6 : 1 }}>
+      {SEGMENTS.map((s) => {
+        const active = value === s.value;
+        return (
+          <button
+            key={s.value}
+            disabled={disabled}
+            onClick={() => onChange(s.value)}
+            style={{
+              padding: "5px 11px", borderRadius: 6, border: "none", fontSize: 11.5, fontWeight: 700,
+              background: active ? PRIMARY : "transparent", color: active ? "#fff" : "#6b7280",
+              cursor: disabled ? "wait" : "pointer", transition: "background .15s, color .15s", whiteSpace: "nowrap",
+            }}
+          >
+            {s.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const chipStyle = (checked) => ({
   display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20,
   border: `1px solid ${checked ? PRIMARY : "#ddd"}`, background: checked ? `${PRIMARY}12` : "#fff",
@@ -33,7 +63,7 @@ const chipStyle = (checked) => ({
 
 const scopeState = (value) => (value === true ? "all" : Array.isArray(value) ? "some" : "none");
 
-function ScopedPermissionRow({ role, permKey, label, allRoles, onSave, saving }) {
+function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSave, saving }) {
   const value = role.permissions?.[permKey];
   const state = scopeState(value);
   const selected = Array.isArray(value) ? value : [];
@@ -50,18 +80,20 @@ function ScopedPermissionRow({ role, permKey, label, allRoles, onSave, saving })
   };
 
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 12, color: "#374151", flex: 1 }}>{label}</span>
+    <div style={{ padding: "10px 0", borderBottom: "1px solid #f5f5f5" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon name={icon} size={13} color="#6b7280" />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: "#1a1a2e" }}>{label}</p>
+          <p style={{ margin: "1px 0 0", fontSize: 10.5, color: "#9ca3af" }}>{hint}</p>
+        </div>
         {saving && <Icon name="clock" size={12} color="#9ca3af" />}
-        <select value={state} disabled={saving} onChange={(e) => setState(e.target.value)} style={{ ...selectStyle, cursor: saving ? "wait" : "pointer" }}>
-          <option value="all">Todos</option>
-          <option value="some">Algunos</option>
-          <option value="none">Ninguno (solo lo propio)</option>
-        </select>
+        <Segmented value={state} disabled={saving} onChange={setState} />
       </div>
       {state === "some" && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7, paddingLeft: 4 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9, paddingLeft: 38 }}>
           {allRoles.filter((r) => r.name !== role.name).map((r) => (
             <label key={r.name} style={chipStyle(selected.includes(r.name))}>
               <input
@@ -73,8 +105,28 @@ function ScopedPermissionRow({ role, permKey, label, allRoles, onSave, saving })
               {r.label}
             </label>
           ))}
+          {allRoles.length <= 1 && (
+            <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>No hay otros roles para elegir todavía.</span>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SimplePermissionRow({ role, permKey, icon, label, hint, onToggle, saving }) {
+  const checked = !!role.permissions?.[permKey];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #f5f5f5" }}>
+      <div style={{ width: 28, height: 28, borderRadius: 7, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon name={icon} size={13} color="#6b7280" />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: "#1a1a2e" }}>{label}</p>
+        <p style={{ margin: "1px 0 0", fontSize: 10.5, color: "#9ca3af" }}>{hint}</p>
+      </div>
+      {saving && <Icon name="clock" size={12} color="#9ca3af" />}
+      <Toggle on={checked} onChange={onToggle} sm />
     </div>
   );
 }
@@ -85,6 +137,7 @@ export default function RolesTab() {
   const [error, setError] = useState("");
   const [savingKey, setSavingKey] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -118,65 +171,85 @@ export default function RolesTab() {
   if (loading) return <p style={{ color: "#9ca3af", fontSize: 13 }}>Cargando roles...</p>;
 
   const editableRoles = roles.filter((r) => r.name !== "desarrollador");
+  const visibleRoles = editableRoles.filter((r) =>
+    !search.trim() || r.label.toLowerCase().includes(search.trim().toLowerCase())
+  );
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 18 }}>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Roles y permisos</h2>
         <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>
-          Decide qué puede ver o hacer cada rol, y sobre los datos de qué otros roles. El rol desarrollador siempre tiene acceso total y no se edita aquí.
+          Elige un rol para ver y cambiar qué puede hacer, y sobre los datos de qué otros roles. El rol desarrollador siempre tiene acceso total y no se edita aquí.
         </p>
+      </div>
+
+      <div style={{ position: "relative", marginBottom: 16, maxWidth: 320 }}>
+        <Icon name="users" size={13} color="#9ca3af" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)" }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar un rol..."
+          style={{ width: "100%", padding: "8px 12px 8px 32px", border: "1.5px solid #d0d7de", borderRadius: 7, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }}
+        />
       </div>
 
       {error && <p style={{ color: "#ef4444", fontSize: 13, marginBottom: 14 }}>{error}</p>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {editableRoles.map((role) => {
+        {visibleRoles.length === 0 && (
+          <p style={{ color: "#9ca3af", fontSize: 13 }}>Ningún rol coincide con "{search}".</p>
+        )}
+        {visibleRoles.map((role) => {
           const isOpen = expanded === role.name;
           return (
-            <div key={role.name} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+            <div key={role.name} style={{ background: "#fff", border: `1px solid ${isOpen ? PRIMARY : "#e8e8e8"}`, borderRadius: 10, overflow: "hidden", transition: "border-color .15s" }}>
               <button
                 onClick={() => setExpanded(isOpen ? null : role.name)}
-                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "14px 16px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "14px 16px", background: isOpen ? `${PRIMARY}08` : "none", border: "none", cursor: "pointer", textAlign: "left" }}
               >
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{role.label}</p>
-                <span style={{ fontSize: 11, color: "#9ca3af", flex: 1 }}>{role.description}</span>
-                <Icon name="chevronDown" size={13} color="#9ca3af" style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+                <span style={{ fontSize: 11, color: "#9ca3af", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{role.description}</span>
+                <Icon name="chevronDown" size={13} color={isOpen ? PRIMARY : "#9ca3af"} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
               </button>
 
               {isOpen && (
-                <div style={{ padding: "0 16px 16px" }}>
-                  {SIMPLE_PERMISSIONS.map(({ key, label }) => {
-                    const checked = !!role.permissions?.[key];
-                    const isSaving = savingKey === `${role.name}:${key}`;
-                    return (
-                      <label key={key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#374151", cursor: isSaving ? "wait" : "pointer", marginBottom: 10 }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={isSaving}
-                          onChange={() => toggleSimple(role, key)}
-                          style={{ width: 15, height: 15, cursor: isSaving ? "wait" : "pointer" }}
-                        />
-                        {label}
-                        {isSaving && <Icon name="clock" size={12} color="#9ca3af" />}
-                      </label>
-                    );
-                  })}
+                <div style={{ padding: "4px 16px 16px" }}>
+                  <p style={{ margin: "10px 0 2px", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#b0b8c8", textTransform: "uppercase" }}>
+                    Permisos generales
+                  </p>
+                  {SIMPLE_PERMISSIONS.map((p) => (
+                    <SimplePermissionRow
+                      key={p.key}
+                      role={role}
+                      permKey={p.key}
+                      icon={p.icon}
+                      label={p.label}
+                      hint={p.hint}
+                      saving={savingKey === `${role.name}:${p.key}`}
+                      onToggle={() => toggleSimple(role, p.key)}
+                    />
+                  ))}
 
-                  <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
-                    {SCOPED_PERMISSIONS.map(({ key, label }) => (
-                      <ScopedPermissionRow
-                        key={key}
-                        role={role}
-                        permKey={key}
-                        label={label}
-                        allRoles={editableRoles}
-                        saving={savingKey === `${role.name}:${key}`}
-                        onSave={(k, v) => save(role, k, v)}
-                      />
-                    ))}
-                  </div>
+                  <p style={{ margin: "16px 0 2px", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#b0b8c8", textTransform: "uppercase" }}>
+                    Permisos sobre otros roles
+                  </p>
+                  <p style={{ margin: "0 0 4px", fontSize: 10.5, color: "#9ca3af", lineHeight: 1.6 }}>
+                    "Solo lo propio" nunca le quita a nadie ver lo suyo — solo decide si además puede ver/actuar sobre lo de otros roles.
+                  </p>
+                  {SCOPED_PERMISSIONS.map((p) => (
+                    <ScopedPermissionRow
+                      key={p.key}
+                      role={role}
+                      permKey={p.key}
+                      icon={p.icon}
+                      label={p.label}
+                      hint={p.hint}
+                      allRoles={editableRoles}
+                      saving={savingKey === `${role.name}:${p.key}`}
+                      onSave={(k, v) => save(role, k, v)}
+                    />
+                  ))}
                 </div>
               )}
             </div>

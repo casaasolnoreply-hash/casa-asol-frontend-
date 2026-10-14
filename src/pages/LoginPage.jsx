@@ -114,8 +114,11 @@ export default function LoginPage() {
               <input
                 value={user}
                 onChange={(e) => { setUser(e.target.value); setErr(""); }}
-                placeholder="admin"
                 autoFocus
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
                 style={fieldStyle}
                 onFocus={(e)  => (e.target.style.borderColor = PRIMARY)}
                 onBlur={(e)   => (e.target.style.borderColor = "#e0e0e0")}
@@ -134,8 +137,7 @@ export default function LoginPage() {
               <PasswordInput
                 value={pass}
                 onChange={(e) => { setPass(e.target.value); setErr(""); }}
-                placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete="off"
                 style={fieldStyle}
                 onFocus={(e)  => (e.target.style.borderColor = PRIMARY)}
                 onBlur={(e)   => (e.target.style.borderColor = "#e0e0e0")}
