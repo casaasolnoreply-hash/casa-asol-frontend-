@@ -4,10 +4,11 @@ import { PRIMARY, DARK } from "../constants/theme";
 import { useApp } from "../context/AppContext";
 import { api } from "../api/client";
 import Icon from "../components/ui/Icon";
+import { hasScope } from "../utils/permissions";
 import AddItemModal from "../components/ui/AddItemModal";
 import NavTab         from "../components/admin/tabs/NavTab";
 import SectionsTab    from "../components/admin/tabs/SectionsTab";
-import ContentTab     from "../components/admin/tabs/ContentTab";
+import ContentTab, { SITE_SECTIONS } from "../components/admin/tabs/ContentTab";
 import ImagesTab      from "../components/admin/tabs/ImagesTab";
 import SettingsTab    from "../components/admin/tabs/SettingsTab";
 import ProgramaEditor from "../components/admin/tabs/ProgramaEditor";
@@ -35,6 +36,7 @@ const SITE_TABS = [
   { id: "financiacion", icon: "star",     label: "Financiación",   sub: "financiacion" },
   { id: "voluntariado", icon: "check",    label: "Voluntariado",   sub: "voluntariado" },
   { id: "contacto",     icon: "phone",    label: "Contacto",       sub: "contacto" },
+  { id: "confianza",    icon: "star",     label: "Confían en nosotros", sub: "confianza" },
 ];
 
 /* ── Config drawer items ── */
@@ -119,15 +121,16 @@ function StatsEditor() {
   );
 }
 
-function SectionWrapper({ sub, label, description }) {
+function SectionWrapper({ sub, onChangeSub }) {
+  const info = SITE_SECTIONS.find((s) => s.id === sub);
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{label}</h2>
-        {description && <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>{description}</p>}
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>{info?.label}</h2>
+        {info?.description && <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>{info.description}</p>}
       </div>
       <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 24 }}>
-        <ContentTab initialSub={sub} />
+        <ContentTab sub={sub} onChangeSub={onChangeSub} />
       </div>
     </div>
   );
@@ -152,6 +155,13 @@ export default function AdminPage() {
 
   const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canManageUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
   const [tab, setTab]           = useState(defaultTab);
+  // Qué sección del editor de contenido (ContentTab) está activa — se
+  // mantiene en sincronía con `tab` cuando se navega por el sidebar, y
+  // se actualiza sola cuando se cambia de chip DENTRO de ContentTab
+  // (incluye "topbar" y "footer", que no tienen su propia entrada de
+  // sidebar), para que el encabezado de arriba nunca quede desfasado.
+  const [siteSub, setSiteSub]   = useState("hero");
+  const SITE_WRAPPER_IDS = new Set(["hero", "historia", "financiacion", "voluntariado", "contacto", "confianza"]);
   const [configOpen, setConfigOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
 
@@ -169,6 +179,7 @@ export default function AdminPage() {
   // En el panel angosto (overlay), elegir una sección debe cerrarlo solo.
   const goToTab = (id) => {
     setTab(id);
+    if (SITE_WRAPPER_IDS.has(id)) setSiteSub(id);
     if (window.matchMedia("(max-width: 899px)").matches) setSidebarOpen(false);
   };
 
@@ -177,7 +188,7 @@ export default function AdminPage() {
     api.getUserRequests().then((list) => setPendingRequests(list.length)).catch(() => {});
   }, [canManageUsers, tab]);
 
-  const current = ALL_TABS.find((m) => m.id === tab);
+  const current = SITE_WRAPPER_IDS.has(tab) ? SITE_SECTIONS.find((s) => s.id === siteSub) : ALL_TABS.find((m) => m.id === tab);
   const handleLogout = () => { logout(); navigate("/"); };
 
   const openConfig = (id) => { setConfigOpen(false); goToTab(id); };
@@ -251,11 +262,13 @@ export default function AdminPage() {
       case "images":       return <ImagesTab />;
       case "nav":          return <NavTab />;
       case "settings":     return <SettingsTab />;
-      case "hero":         return <SectionWrapper sub="hero"         label="Hero / Inicio"  description="Título, subtítulo y fondo de la sección principal" />;
-      case "historia":     return <SectionWrapper sub="historia"     label="Historia"       description="Textos y cita de la sección Historia" />;
-      case "financiacion": return <SectionWrapper sub="financiacion" label="Financiación"   description="Montos de donación, cuentas bancarias y pagos en línea" />;
-      case "voluntariado": return <SectionWrapper sub="voluntariado" label="Voluntariado"   description="Texto e ítems de la sección Voluntariado" />;
-      case "contacto":     return <SectionWrapper sub="contacto"     label="Contacto"       description="Ítems de información de contacto" />;
+      case "hero":
+      case "historia":
+      case "financiacion":
+      case "voluntariado":
+      case "contacto":
+      case "confianza":
+        return <SectionWrapper sub={siteSub} onChangeSub={setSiteSub} />;
       default: return null;
     }
   };
@@ -304,9 +317,9 @@ export default function AdminPage() {
             General
           </div>
           {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
-          <NavBtn id="estudiantes" icon="users" label="Estudiantes" />
-          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
-          {((isOperationalRole && !isDirector) || canManageUsers) && <NavBtn id="galeria" icon="image" label="Galería de imágenes" />}
+          {(canManageUsers || hasScope(authUser?.permissions, "verEstudiantes")) && <NavBtn id="estudiantes" icon="users" label="Estudiantes" />}
+          {(canManageUsers || (isOperationalRole && hasScope(authUser?.permissions, "crearActividades"))) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
+          {(canManageUsers || (isOperationalRole && hasScope(authUser?.permissions, "crearActividades"))) && <NavBtn id="galeria" icon="image" label="Galería de imágenes" />}
           <NavBtn id="mi-informe" icon="list" label={isOperationalRole ? "Mi informe" : "Informes"} />
 
           {canViewMessages && (

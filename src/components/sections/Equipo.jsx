@@ -46,7 +46,10 @@ function MemberCard({ m, setExpandModal, language, t }) {
                 : <div style={{ width: 130, height: 130, borderRadius: "50%", background: PRIMARY_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, fontWeight: 700, color: PRIMARY, margin: "0 auto 24px", border: `3px solid ${PRIMARY}` }}>{m.initials}</div>
               }
               <p style={{ fontSize: 24, fontWeight: 700, color: "#222", marginBottom: 8 }}>{name}</p>
-              <p style={{ fontSize: 18, color: "#666", lineHeight: 1.7, marginBottom: workPhotos.length ? 28 : 0 }}>{role}</p>
+              <p style={{ fontSize: 18, color: "#666", lineHeight: 1.7, marginBottom: m.puestoDesc ? 10 : (workPhotos.length ? 28 : 0) }}>{role}</p>
+              {m.puestoDesc && (
+                <p style={{ fontSize: 14, color: "#888", lineHeight: 1.7, marginBottom: workPhotos.length ? 24 : 0 }}>{m.puestoDesc}</p>
+              )}
 
               {workPhotos.length > 0 && (
                 <>

@@ -72,7 +72,7 @@ export const UI = {
     historia: {},
     financiacion: {
       comoDonar: "¿CÓMO DONAR?",
-      bankLabels: { Titular: "Titular", Banco: "Banco", "N.º de cuenta": "N.º de cuenta", "Código bancario": "Código bancario", IBAN: "IBAN", BIC: "BIC", Referencia: "Referencia" },
+      bankLabels: { Titular: "Titular", Banco: "Banco", "N.º de cuenta": "N.º de cuenta", "Código bancario": "Código bancario", IBAN: "IBAN", BIC: "BIC", Referencia: "Referencia", "Tipo de cuenta": "Tipo de cuenta" },
     },
     voluntariado: {
       cta: "QUIERO VOLUNTARIAR",
@@ -114,7 +114,7 @@ export const UI = {
     historia: {},
     financiacion: {
       comoDonar: "HOW TO DONATE?",
-      bankLabels: { Titular: "Account holder", Banco: "Bank", "N.º de cuenta": "Account number", "Código bancario": "Bank code", IBAN: "IBAN", BIC: "BIC", Referencia: "Reference" },
+      bankLabels: { Titular: "Account holder", Banco: "Bank", "N.º de cuenta": "Account number", "Código bancario": "Bank code", IBAN: "IBAN", BIC: "BIC", Referencia: "Reference", "Tipo de cuenta": "Account type" },
     },
     voluntariado: {
       cta: "I WANT TO VOLUNTEER",
@@ -156,7 +156,7 @@ export const UI = {
     historia: {},
     financiacion: {
       comoDonar: "WIE SPENDEN?",
-      bankLabels: { Titular: "Kontoinhaber", Banco: "Bank", "N.º de cuenta": "Kontonummer", "Código bancario": "Bankleitzahl", IBAN: "IBAN", BIC: "BIC", Referencia: "Verwendungszweck" },
+      bankLabels: { Titular: "Kontoinhaber", Banco: "Bank", "N.º de cuenta": "Kontonummer", "Código bancario": "Bankleitzahl", IBAN: "IBAN", BIC: "BIC", Referencia: "Verwendungszweck", "Tipo de cuenta": "Kontoart" },
     },
     voluntariado: {
       cta: "ICH MÖCHTE MITMACHEN",

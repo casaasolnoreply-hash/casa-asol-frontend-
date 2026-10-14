@@ -48,11 +48,9 @@ export const DEFAULT_CONTENT = {
     supertitle: "AYUDAR Y DONAR",
     title: "Tu apoyo cambia vidas",
     desc: "La Casa Estudiantil ASOL brinda a alrededor de 20 adolescentes y jóvenes de entre 14 y 20 años, provenientes de contextos de vulnerabilidad, exclusión o riesgo, la oportunidad de acceder a una educación de calidad y construir un proyecto de vida digno y sostenible.",
-    amounts: ["€100 / mes", "€150 / mes", "€300 / mes", "Otra cantidad"],
     btnText: "DONAR AHORA",
     docUrl: "",
     docLabel: "Ver cuentas para depósito",
-    paymentEnabled: false,
     donacionImages: [],
     bank: {
       heading: "¿Quiere ayudar? ¡Es muy fácil!",
@@ -66,18 +64,25 @@ export const DEFAULT_CONTENT = {
       reference: "Casa Hogar Estudiantil",
       note: "Su donación es deducible de impuestos.",
     },
+    bankGT: {
+      heading: "Cuenta en Guatemala",
+      bankName: "G y T Continental",
+      accountType: "Cuenta monetaria",
+      accountHolder: "ASOL/EDUCACION",
+      accountNumber: "001-0066218-7",
+    },
     patrocinioIndividual: {
       heading: "Patrocinio Individual",
       intro: "Apoyo de una adolescente por mes:",
       monthly: [
-        { label: "Atención integral en Casa ASOL", eur: "300", gtq: "2400" },
-        { label: "Educación y alimentación en Casa ASOL", eur: "200", gtq: "1600" },
-        { label: "Educación en Casa ASOL", eur: "100", gtq: "800" },
+        { label: "Atención integral en Casa ASOL (mensualidad escolar, alimentación, atención profesional)", eur: "300", gtq: "2400" },
+        { label: "Mensualidad escolar y alimentación en Casa ASOL", eur: "200", gtq: "1600" },
+        { label: "Mensualidad escolar para residentes en Casa ASOL", eur: "100", gtq: "800" },
         { label: "Beca externa", eur: "60", gtq: "480" },
       ],
-      individualHeading: "Apoyos individuales:",
+      individualHeading: "Apoyos únicos:",
       individual: [
-        { label: "10 atenciones psicológicas", eur: "50", gtq: "400" },
+        { label: "1 atención psicológica", eur: "25", gtq: "200" },
         { label: "1 Excursión", eur: "200", gtq: "1600" },
         { label: "1 Mantenimiento de techo", eur: "500", gtq: "4000" },
         { label: "1 Filtro de agua", eur: "200", gtq: "1600" },
@@ -122,6 +127,10 @@ export const DEFAULT_CONTENT = {
   },
   footer: {
     desc: "Educación, protección y desarrollo integral para mujeres adolescentes indígenas en Guatemala, a través de la Casa Estudiantil ASOL desde 1992.",
+  },
+  confianza: {
+    heading: "Quiénes confían en nosotros:",
+    logos: [],
   },
 };
 
@@ -217,4 +226,5 @@ export const DEFAULT_SECTIONS = [
   { id: "financiacion", label: "Financiación",          visible: true },
   { id: "voluntariado", label: "Voluntariado",          visible: true },
   { id: "contacto",     label: "Contacto",              visible: true },
+  { id: "confianza",    label: "Quiénes confían en nosotros", visible: true },
 ];

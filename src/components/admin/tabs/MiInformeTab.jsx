@@ -4,6 +4,7 @@ import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import { LOGO_PNG_BASE64 } from "../../../assets/logoBase64";
+import { hasScope } from "../../../utils/permissions";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -1246,11 +1247,11 @@ function Stepper({ step, setStep }) {
 export default function MiInformeTab() {
   const { authUser, content } = useApp();
   const siteName = content.brand?.siteName || "Casa ASOL";
-  // admin/desarrollador y las dos directoras no tienen un informe
-  // "propio" — pueden elegir de cuál rol ver/crear informes, y son
-  // quienes reciben y revisan (aceptan/devuelven) lo que envía cada
-  // área operativa.
-  const canManageAllRoles = ["admin", "desarrollador", "directora_tecnica", "directora_programatica"].includes(authUser.role);
+  // Antes esta lista de roles estaba fija en el código. Ahora es el
+  // permiso "verInformesPorUsuario" (configurable por rol en Roles y
+  // permisos): quién puede elegir de cuál rol ver/crear informes, y
+  // revisar (aceptar/devolver) lo que envía cada área operativa.
+  const canManageAllRoles = hasScope(authUser.permissions, "verInformesPorUsuario");
 
   const [availableRoles, setAvailableRoles] = useState(null); // null = aún no se sabe (solo aplica a canManageAllRoles)
   const [selectedRole, setSelectedRole] = useState(null);

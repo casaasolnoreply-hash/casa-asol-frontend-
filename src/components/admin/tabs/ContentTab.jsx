@@ -6,6 +6,7 @@ import Icon from "../../ui/Icon";
 import IconPicker from "../../ui/IconPicker";
 import AddItemModal from "../../ui/AddItemModal";
 import AddImageBtn from "../AddImageBtn";
+import Toggle from "../../ui/Toggle";
 
 const inp = { width: "100%", padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" };
 const btnD = { display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 9px", background: "#fff", color: "#ef4444", border: "1px solid #fecaca", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer" };
@@ -13,10 +14,19 @@ const chip = (active) => ({ padding: "5px 12px", borderRadius: 20, border: `1px 
 const addBtn = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", marginTop: 4 };
 const labelStyle = { display: "block", fontSize: 10, fontWeight: 700, color: "#6b7280", marginBottom: 5, letterSpacing: .8 };
 
-const TABS = [
-  ["topbar", "Barra superior"], ["hero", "Hero"], ["historia", "Historia"],
-  ["financiacion", "Financiación"], ["voluntariado", "Voluntariado"],
-  ["contacto", "Contacto"], ["footer", "Footer"],
+// Fuente única de verdad para las 7 secciones que vive este editor —
+// AdminPage la importa para que el encabezado (ícono/título/descripción)
+// siempre coincida con la pestaña realmente activa, sin importar si se
+// navegó por el sidebar o por los chips internos de este componente.
+export const SITE_SECTIONS = [
+  { id: "topbar",       icon: "globe",    chipLabel: "Barra superior", label: "Barra superior", description: "Dirección, teléfono y redes sociales que aparecen arriba del todo" },
+  { id: "hero",         icon: "image",    chipLabel: "Hero",           label: "Hero / Inicio",   description: "Título, subtítulo y fondo de la sección principal" },
+  { id: "historia",     icon: "book",     chipLabel: "Historia",       label: "Historia",        description: "Textos y cita de la sección Historia" },
+  { id: "financiacion", icon: "star",     chipLabel: "Financiación",   label: "Financiación",    description: "Montos de donación, cuentas bancarias y pagos en línea" },
+  { id: "voluntariado", icon: "check",    chipLabel: "Voluntariado",   label: "Voluntariado",    description: "Texto e ítems de la sección Voluntariado" },
+  { id: "contacto",     icon: "phone",    chipLabel: "Contacto",       label: "Contacto",        description: "Ítems de información de contacto" },
+  { id: "confianza",    icon: "star",     chipLabel: "Confían en nosotros", label: "Quiénes confían en nosotros", description: "Franja de logos de aliados/patrocinadores, al final de la página" },
+  { id: "footer",       icon: "fileText", chipLabel: "Footer",         label: "Footer",          description: "Contenido del pie de página del sitio" },
 ];
 
 /* ── Selector de destino para botones del Hero ── */
@@ -54,27 +64,28 @@ function LinkPicker({ value, onChange, navItems }) {
   );
 }
 
-export default function ContentTab({ initialSub = "hero" }) {
-  const [sub, setSub] = useState(initialSub);
+export default function ContentTab({ sub, onChangeSub }) {
   const [paraModal,    setParaModal]    = useState(false);
-  const [amtModal,     setAmtModal]     = useState(false);
   const [volModal,     setVolModal]     = useState(false);
   const [contactModal, setContactModal] = useState(false);
 
   const {
     content, upC, navItems,
-    upAmt, removeAmt, addAmt,
+    upPatrocinioRow, addPatrocinioRow, removePatrocinioRow,
     upVol, removeVol, addVol,
     addVolImage, removeVolImage,
     upContact, addContactItem, removeContactItem,
     addHistoriaParagraph, removeHistoriaParagraph, upHistoriaParagraph,
     addHistoriaImage, removeHistoriaImage,
     addDonacionImage, removeDonacionImage,
+    addConfianzaLogo, removeConfianzaLogo,
     addHeroButton, removeHeroButton, upHeroButton,
     addHeroImage, removeHeroImage,
   } = useApp();
 
   const upBank = (field, v) => upC("financiacion", "bank", { ...content.financiacion.bank, [field]: v });
+  const upBankGT = (field, v) => upC("financiacion", "bankGT", { ...content.financiacion.bankGT, [field]: v });
+  const upFinSub = (key, field, v) => upC("financiacion", key, { ...content.financiacion[key], [field]: v });
 
   const paragraphs = content.historia.paragraphs?.length
     ? content.historia.paragraphs
@@ -87,8 +98,8 @@ export default function ContentTab({ initialSub = "hero" }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 18 }}>
-        {TABS.map(([id, lbl]) => (
-          <button key={id} onClick={() => setSub(id)} style={chip(sub === id)}>{lbl}</button>
+        {SITE_SECTIONS.map(({ id, chipLabel }) => (
+          <button key={id} onClick={() => onChangeSub(id)} style={chip(sub === id)}>{chipLabel}</button>
         ))}
       </div>
 
@@ -312,20 +323,63 @@ export default function ContentTab({ initialSub = "hero" }) {
         <Field label="DESCRIPCIÓN" value={content.financiacion.desc}       onChange={(v) => upC("financiacion", "desc", v)} textarea />
         <Field label="TEXTO BOTÓN DONAR" value={content.financiacion.btnText} onChange={(v) => upC("financiacion", "btnText", v)} />
 
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>MONTOS DE DONACIÓN</label>
-            <button style={addBtn} onClick={() => setAmtModal(true)}>
-              <Icon name="plus" size={12} /> Agregar monto
-            </button>
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: "#92400e", display: "flex", alignItems: "center", gap: 7 }}>
+              <Icon name="star" size={14} color="#92400e" /> Patrocinio individual
+            </p>
+            <Toggle sm on={content.financiacion.patrocinioIndividual?.enabled !== false} onChange={() => upFinSub("patrocinioIndividual", "enabled", content.financiacion.patrocinioIndividual?.enabled === false)} />
           </div>
-          {content.financiacion.amounts.map((a, i) => (
-            <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-              <input value={a} onChange={(e) => upAmt(i, e.target.value)} style={{ ...inp, flex: 1 }} />
-              <button onClick={() => removeAmt(i)} style={btnD}><Icon name="trash" size={11} /></button>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#92400e" }}>Las tablas de montos que se muestran en la franja "Patrocinio Individual" del sitio. Apaga el interruptor para ocultar toda la franja del sitio.</p>
+
+          <Field label="TÍTULO DE LA FRANJA" value={content.financiacion.patrocinioIndividual?.heading || ""} onChange={(v) => upFinSub("patrocinioIndividual", "heading", v)} />
+          <Field label="TEXTO INTRODUCTORIO (arriba de la tabla mensual)" value={content.financiacion.patrocinioIndividual?.intro || ""} onChange={(v) => upC("financiacion", "patrocinioIndividual", { ...content.financiacion.patrocinioIndividual, intro: v })} />
+
+          <label style={{ ...labelStyle, display: "block", marginTop: 10 }}>MONTOS MENSUALES</label>
+          {(content.financiacion.patrocinioIndividual?.monthly || []).map((row, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+              <input value={row.label} onChange={(e) => upPatrocinioRow("monthly", i, "label", e.target.value)} placeholder="Descripción" style={{ ...inp, flex: 2 }} />
+              <input value={row.gtq} onChange={(e) => upPatrocinioRow("monthly", i, "gtq", e.target.value)} placeholder="Q" style={{ ...inp, width: 70 }} />
+              <input value={row.eur} onChange={(e) => upPatrocinioRow("monthly", i, "eur", e.target.value)} placeholder="€" style={{ ...inp, width: 70 }} />
+              <button onClick={() => removePatrocinioRow("monthly", i)} style={btnD}><Icon name="trash" size={11} /></button>
             </div>
           ))}
+          <button style={addBtn} onClick={() => addPatrocinioRow("monthly")}>
+            <Icon name="plus" size={12} /> Agregar fila mensual
+          </button>
+
+          <Field label="TÍTULO DE LA SEGUNDA TABLA (ej. Apoyos únicos)" value={content.financiacion.patrocinioIndividual?.individualHeading || ""} onChange={(v) => upC("financiacion", "patrocinioIndividual", { ...content.financiacion.patrocinioIndividual, individualHeading: v })} />
+
+          <label style={{ ...labelStyle, display: "block", marginTop: 10 }}>MONTOS DE APOYOS ÚNICOS</label>
+          {(content.financiacion.patrocinioIndividual?.individual || []).map((row, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+              <input value={row.label} onChange={(e) => upPatrocinioRow("individual", i, "label", e.target.value)} placeholder="Descripción" style={{ ...inp, flex: 2 }} />
+              <input value={row.gtq} onChange={(e) => upPatrocinioRow("individual", i, "gtq", e.target.value)} placeholder="Q" style={{ ...inp, width: 70 }} />
+              <input value={row.eur} onChange={(e) => upPatrocinioRow("individual", i, "eur", e.target.value)} placeholder="€" style={{ ...inp, width: 70 }} />
+              <button onClick={() => removePatrocinioRow("individual", i)} style={btnD}><Icon name="trash" size={11} /></button>
+            </div>
+          ))}
+          <button style={addBtn} onClick={() => addPatrocinioRow("individual")}>
+            <Icon name="plus" size={12} /> Agregar fila de apoyo único
+          </button>
         </div>
+
+        {[
+          { key: "patrocinioEmpresarial", icon: "star",    color: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe", label: "Patrocinio empresarial" },
+          { key: "donacionesEspecie",     icon: "cloud",    color: "#be185d", bg: "#fdf2f8", border: "#fbcfe8", label: "Donaciones en especie" },
+          { key: "practicasEps",          icon: "book",     color: "#0e7490", bg: "#ecfeff", border: "#a5f3fc", label: "Prácticas y EPS" },
+        ].map(({ key, icon, color, bg, border, label }) => (
+          <div key={key} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color, display: "flex", alignItems: "center", gap: 7 }}>
+                <Icon name={icon} size={14} color={color} /> {label}
+              </p>
+              <Toggle sm on={content.financiacion[key]?.enabled !== false} onChange={() => upFinSub(key, "enabled", content.financiacion[key]?.enabled === false)} />
+            </div>
+            <Field label="TÍTULO DE LA FRANJA" value={content.financiacion[key]?.heading || ""} onChange={(v) => upFinSub(key, "heading", v)} />
+            <Field label="TEXTO" value={content.financiacion[key]?.text || ""} onChange={(v) => upFinSub(key, "text", v)} textarea />
+          </div>
+        ))}
 
         <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
           <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#15803d", display: "flex", alignItems: "center", gap: 7 }}>
@@ -342,6 +396,18 @@ export default function ContentTab({ initialSub = "hero" }) {
           <Field label="BIC"                  value={content.financiacion.bank?.bic || ""}           onChange={(v) => upBank("bic", v)} />
           <Field label="REFERENCIA DE PAGO"   value={content.financiacion.bank?.reference || ""}     onChange={(v) => upBank("reference", v)} />
           <Field label="NOTA (ej. deducible de impuestos)" value={content.financiacion.bank?.note || ""} onChange={(v) => upBank("note", v)} />
+        </div>
+
+        <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
+          <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: "#15803d", display: "flex", alignItems: "center", gap: 7 }}>
+            <Icon name="fileText" size={14} color="#15803d" /> Cuenta en Guatemala (depósito local)
+          </p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, color: "#166534" }}>Se muestra junto a la cuenta internacional, para donantes dentro de Guatemala.</p>
+          <Field label="TÍTULO DEL BLOQUE"    value={content.financiacion.bankGT?.heading || ""}       onChange={(v) => upBankGT("heading", v)} />
+          <Field label="BANCO"                value={content.financiacion.bankGT?.bankName || ""}      onChange={(v) => upBankGT("bankName", v)} />
+          <Field label="TIPO DE CUENTA"        value={content.financiacion.bankGT?.accountType || ""}  onChange={(v) => upBankGT("accountType", v)} />
+          <Field label="NOMBRE DE CUENTA"      value={content.financiacion.bankGT?.accountHolder || ""} onChange={(v) => upBankGT("accountHolder", v)} />
+          <Field label="NÚMERO DE CUENTA"      value={content.financiacion.bankGT?.accountNumber || ""} onChange={(v) => upBankGT("accountNumber", v)} />
         </div>
 
         <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 8, padding: "16px 18px", marginBottom: 14 }}>
@@ -409,14 +475,6 @@ export default function ContentTab({ initialSub = "hero" }) {
           </div>
         </div>
 
-        {amtModal && (
-          <AddItemModal
-            title="Agregar monto de donación"
-            fields={[{ key: "val", label: "MONTO", type: "text", placeholder: "Ej: Q100 / mes" }]}
-            onSave={(d) => addAmt(d.val)}
-            onClose={() => setAmtModal(false)}
-          />
-        )}
       </>}
 
       {/* ── VOLUNTARIADO ── */}
@@ -555,6 +613,54 @@ export default function ContentTab({ initialSub = "hero" }) {
             onClose={() => setContactModal(false)}
           />
         )}
+      </>}
+
+      {/* ── CONFIANZA ── */}
+      {sub === "confianza" && <>
+        <Field label="TEXTO DE LA FRANJA" value={content.confianza?.heading || ""} onChange={(v) => upC("confianza", "heading", v)} />
+
+        <div style={{ marginBottom: 14 }}>
+          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: .5 }}>LOGOS</p>
+          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#9ca3af" }}>
+            Si no agregas ningún logo, esta franja no se muestra en el sitio.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 8 }}>
+            {(content.confianza?.logos || []).map((img, idx) => (
+              <div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+                <img src={img} alt="" style={{ width: 80, height: 56, objectFit: "contain", background: "#f9fafb", borderRadius: 6, border: "2px solid #e0e0e0", display: "block" }} />
+                <button
+                  onClick={() => removeConfianzaLogo(idx)}
+                  style={{ position: "absolute", top: -7, right: -7, width: 18, height: 18, borderRadius: "50%", background: "#ef4444", border: "2px solid #fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                >
+                  <Icon name="x" size={9} />
+                </button>
+              </div>
+            ))}
+            <AddImageBtn onAdd={addConfianzaLogo} />
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              placeholder="O pega una URL de imagen aquí y pulsa +"
+              id="confianza-url-inp"
+              style={{ flex: 1, padding: "7px 10px", border: "1px solid #d0d7de", borderRadius: 6, fontSize: 12, fontFamily: "inherit" }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.target.value.trim()) {
+                  addConfianzaLogo(e.target.value.trim());
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById("confianza-url-inp");
+                if (el?.value.trim()) { addConfianzaLogo(el.value.trim()); el.value = ""; }
+              }}
+              style={{ padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+            >
+              <Icon name="plus" size={13} /> Agregar
+            </button>
+          </div>
+        </div>
       </>}
 
       {/* ── FOOTER ── */}

@@ -5,7 +5,7 @@ import { UI, formatAmount } from "../../i18n/translations";
 import ExpandBtn from "../ui/ExpandBtn";
 import { HuipilStripeVertical, NahualesStripeVertical } from "../ui/GuatemalanMotifs";
 
-function BankDetails({ bank, light, t, bankText }) {
+function BankDetails({ bank, light, t, bankText, heading }) {
   if (!bank) return null;
   const rowStyle = { display: "flex", justifyContent: "space-between", gap: 12, padding: "9px 0", borderBottom: light ? "1px solid rgba(255,255,255,.14)" : "1px solid #eef2f7" };
   const labelStyle = { fontSize: 12, opacity: light ? .75 : .6, color: light ? "#fff" : "#6b7280" };
@@ -14,6 +14,7 @@ function BankDetails({ bank, light, t, bankText }) {
   const rows = [
     [bl["Titular"],       bank.accountHolder],
     [bl["Banco"],         bank.bankName],
+    [bl["Tipo de cuenta"], bank.accountType],
     [bl["N.º de cuenta"], bank.accountNumber],
     [bl["Código bancario"], bank.bankCode],
     [bl["IBAN"],          bank.iban],
@@ -23,9 +24,9 @@ function BankDetails({ bank, light, t, bankText }) {
 
   return (
     <div style={{ textAlign: "left" }}>
-      {(bankText.heading || bankText.intro) && (
+      {(heading || bankText.intro) && (
         <div style={{ marginBottom: 18 }}>
-          {bankText.heading && <p style={{ margin: "0 0 8px", fontWeight: 800, fontSize: light ? 18 : 16, color: light ? "#fff" : "#1a1a2e" }}>{bankText.heading}</p>}
+          {heading && <p style={{ margin: "0 0 8px", fontWeight: 800, fontSize: light ? 18 : 16, color: light ? "#fff" : "#1a1a2e" }}>{heading}</p>}
           {bankText.intro && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, opacity: light ? .9 : 1, color: light ? "#fff" : "#5b6472" }}>{bankText.intro}</p>}
         </div>
       )}
@@ -45,7 +46,7 @@ function BankDetails({ bank, light, t, bankText }) {
  * corte/nahuales side stripes used throughout the site, so it never
  * feels like a plain generic popup.
  */
-function BankModal({ bank, docUrl, docLabel, onOpenDoc, onClose, t, bankText }) {
+function BankModal({ bank, bankGT, docUrl, docLabel, onOpenDoc, onClose, t, bankText }) {
   return (
     <div
       onClick={onClose}
@@ -74,7 +75,13 @@ function BankModal({ bank, docUrl, docLabel, onOpenDoc, onClose, t, bankText }) 
         </button>
 
         <div style={{ position: "relative", zIndex: 1, padding: "48px 50px", maxHeight: "88vh", overflowY: "auto", boxSizing: "border-box" }}>
-          <BankDetails bank={bank} light t={t} bankText={bankText} />
+          <BankDetails bank={bank} light t={t} bankText={bankText} heading={bankText.heading} />
+          {bankGT && (
+            <>
+              <div style={{ height: 1, background: "rgba(255,255,255,.16)", margin: "26px 0" }} />
+              <BankDetails bank={bankGT} light t={t} bankText={{}} heading={bankGT.heading || "Cuenta en Guatemala"} />
+            </>
+          )}
           {docUrl && (
             <button
               onClick={onOpenDoc}
@@ -133,17 +140,17 @@ export default function Financiacion() {
   const supertitle = t.nav.ayudar;
   const bankText = ct?.bank || financiacion.bank || {};
 
-  const piHeading = t.nav["patrocinio-individual"];
+  const piHeading = pi?.heading || t.nav["patrocinio-individual"];
   const piIntro = ct?.patrocinioIndividual?.intro || pi?.intro;
   const piIndividualHeading = ct?.patrocinioIndividual?.individualHeading || pi?.individualHeading;
   const monthlyLabels = ct?.patrocinioIndividual?.monthlyLabels;
   const individualLabels = ct?.patrocinioIndividual?.individualLabels;
 
-  const peHeading = t.nav["patrocinio-empresarial"];
+  const peHeading = pe?.heading || t.nav["patrocinio-empresarial"];
   const peText = ct?.patrocinioEmpresarial?.text || pe?.text;
-  const deHeading = t.nav["donaciones-especie"];
+  const deHeading = de?.heading || t.nav["donaciones-especie"];
   const deText = ct?.donacionesEspecie?.text || de?.text;
-  const epsHeading = t.nav["practicas-eps"];
+  const epsHeading = eps?.heading || t.nav["practicas-eps"];
   const epsText = ct?.practicasEps?.text || eps?.text;
 
   const openDoc = () => {
@@ -151,7 +158,7 @@ export default function Financiacion() {
   };
 
   return (
-    <section id="financiacion" style={{ position: "relative", zIndex: 0 }}>
+    <section id="financiacion">
       {/* ── Banner principal ── */}
       <div style={{ padding: "80px 20px 64px", background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_DARK} 100%)`, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -100, right: -80, width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,.08)", filter: "blur(10px)", pointerEvents: "none" }} />
@@ -187,7 +194,7 @@ export default function Financiacion() {
       <div style={{ background: "#f7f9fc", padding: "56px 20px 80px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
 
-          {pi && (
+          {pi && pi.enabled !== false && (
             <StripCard id="patrocinio-individual" heading={piHeading}>
               {piIntro && <p style={{ fontSize: 13.5, fontWeight: 700, color: PRIMARY_DARK, letterSpacing: .3, margin: "0 0 4px" }}>{piIntro}</p>}
               <div style={{ marginBottom: 22 }}>
@@ -201,19 +208,19 @@ export default function Financiacion() {
             </StripCard>
           )}
 
-          {pe && (
+          {pe && pe.enabled !== false && (
             <StripCard id="patrocinio-empresarial" heading={peHeading}>
               <p style={{ fontSize: 14.5, lineHeight: 1.85, color: "#5b6472", margin: 0 }}>{peText}</p>
             </StripCard>
           )}
 
-          {de && (
+          {de && de.enabled !== false && (
             <StripCard id="donaciones-especie" heading={deHeading}>
               <p style={{ fontSize: 14.5, lineHeight: 1.85, color: "#5b6472", margin: 0 }}>{deText}</p>
             </StripCard>
           )}
 
-          {eps && (
+          {eps && eps.enabled !== false && (
             <StripCard id="practicas-eps" heading={epsHeading}>
               <p style={{ fontSize: 14.5, lineHeight: 1.85, color: "#5b6472", margin: 0 }}>{epsText}</p>
             </StripCard>
@@ -224,6 +231,7 @@ export default function Financiacion() {
       {showBank && (
         <BankModal
           bank={financiacion.bank}
+          bankGT={financiacion.bankGT}
           docUrl={financiacion.docUrl}
           docLabel={financiacion.btnText}
           onOpenDoc={openDoc}

@@ -262,12 +262,13 @@ export function AppProvider({ children }) {
   const upC = (sec, field, val) =>
     setContent((c) => ({ ...c, [sec]: { ...c[sec], [field]: val } }));
 
-  const upAmt = (i, v) =>
-    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, amounts: c.financiacion.amounts.map((a, j) => j === i ? v : a) } }));
-  const removeAmt = (i) =>
-    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, amounts: c.financiacion.amounts.filter((_, j) => j !== i) } }));
-  const addAmt = (val = "") =>
-    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, amounts: [...c.financiacion.amounts, val] } }));
+  /* ── Patrocinio individual: filas de montos (mensuales o apoyos únicos) ── */
+  const upPatrocinioRow = (listKey, i, field, v) =>
+    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, patrocinioIndividual: { ...c.financiacion.patrocinioIndividual, [listKey]: c.financiacion.patrocinioIndividual[listKey].map((row, j) => j === i ? { ...row, [field]: v } : row) } } }));
+  const addPatrocinioRow = (listKey) =>
+    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, patrocinioIndividual: { ...c.financiacion.patrocinioIndividual, [listKey]: [...c.financiacion.patrocinioIndividual[listKey], { label: "Nuevo apoyo", eur: "0", gtq: "0" }] } } }));
+  const removePatrocinioRow = (listKey, i) =>
+    setContent((c) => ({ ...c, financiacion: { ...c.financiacion, patrocinioIndividual: { ...c.financiacion.patrocinioIndividual, [listKey]: c.financiacion.patrocinioIndividual[listKey].filter((_, j) => j !== i) } } }));
 
   const upVol = (i, v) =>
     setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, list: c.voluntariado.list.map((a, j) => j === i ? v : a) } }));
@@ -275,6 +276,10 @@ export function AppProvider({ children }) {
     setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, list: c.voluntariado.list.filter((_, j) => j !== i) } }));
   const addVol = (val = "") =>
     setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, list: [...c.voluntariado.list, val] } }));
+
+  /* ── Confianza: logos de aliados/patrocinadores ── */
+  const addConfianzaLogo    = (url) => setContent((c) => ({ ...c, confianza: { ...c.confianza, logos: [...(c.confianza?.logos || []), url] } }));
+  const removeConfianzaLogo = (idx) => setContent((c) => ({ ...c, confianza: { ...c.confianza, logos: (c.confianza?.logos || []).filter((_, i) => i !== idx) } }));
 
   /* ── Voluntariado: galería rotativa ── */
   const addVolImage    = (url) => setContent((c) => ({ ...c, voluntariado: { ...c.voluntariado, images: [...(c.voluntariado.images || []), url] } }));
@@ -326,7 +331,13 @@ export function AppProvider({ children }) {
   /* ── Equipo ── */
   const upTeam        = (id, f, v) => setTeam((t) => t.map((x) => x.id === id ? { ...x, [f]: v } : x));
   const removeTeam    = (id)       => setTeam((t) => t.filter((x) => x.id !== id));
-  const addTeamMember = (d = {})   => setTeam((t) => [...t, { id: Date.now(), initials: "NM", name: "Nuevo Miembro", role: "Descripción del rol", photoUrl: "", photos: [], ...d }]);
+  const addTeamMember = (d = {})   => setTeam((t) => [...t, { id: Date.now(), initials: "NM", name: "Nuevo Miembro", role: "Descripción del rol", puestoDesc: "", photoUrl: "", photos: [], ...d }]);
+  const reorderTeam   = (fromIndex, toIndex) => setTeam((t) => {
+    const arr = [...t];
+    const [item] = arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, item);
+    return arr;
+  });
 
   /* ── Equipo: galería de "labor" / actividades por miembro ──
      Distinta de photoUrl (la foto de perfil única que se usa en el círculo del avatar):
@@ -379,7 +390,9 @@ export function AppProvider({ children }) {
       setExpandModal, setMessages, setAuthUser,
       login, logout, uploadImage,
       scrollTo, isSectionVisible,
-      upC, upAmt, removeAmt, addAmt, upVol, removeVol, addVol,
+      upC, upVol, removeVol, addVol,
+      upPatrocinioRow, addPatrocinioRow, removePatrocinioRow,
+      addConfianzaLogo, removeConfianzaLogo,
       addVolImage, removeVolImage,
       upContact, addContactItem, removeContactItem,
       addHistoriaParagraph, removeHistoriaParagraph, upHistoriaParagraph,
@@ -389,7 +402,7 @@ export function AppProvider({ children }) {
       addDonacionImage, removeDonacionImage,
       upStat, removeStat, addStat,
       upProg, removeProg, addProg, addProgImage, removeProgImage,
-      upTeam, removeTeam, addTeamMember, addTeamPhoto, removeTeamPhoto,
+      upTeam, removeTeam, addTeamMember, addTeamPhoto, removeTeamPhoto, reorderTeam,
       toggleNav, upNavLabel, upNavHref, removeNav, addNavItem,
       toggleSub, upSubLabel, upSubHref, removeSub, addSubItem,
       toggleSection,

@@ -62,6 +62,14 @@ export default function AddItemModal({ title, fields = [], onSave, onClose }) {
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: .5 }}>{f.label}</label>
                 <ImageUpload currentUrl={data[f.key]} onUpload={(url) => set(f.key, url)} />
               </>
+            ) : f.type === "select" ? (
+              <>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: .5 }}>{f.label}</label>
+                <select value={data[f.key]} onChange={(e) => set(f.key, e.target.value)} style={{ ...inp, cursor: "pointer" }}>
+                  <option value="">{f.placeholder || "Selecciona..."}</option>
+                  {(f.options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </>
             ) : f.type === "textarea" ? (
               <>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: .5 }}>{f.label}</label>

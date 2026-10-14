@@ -10,6 +10,7 @@ import Financiacion      from "../components/sections/Financiacion";
 import DonacionCarousel  from "../components/sections/DonacionCarousel";
 import Voluntariado      from "../components/sections/Voluntariado";
 import Contacto     from "../components/sections/Contacto";
+import Confianza    from "../components/sections/Confianza";
 import ExpandModal  from "../components/modals/ExpandModal";
 import { HuipilStripe } from "../components/ui/GuatemalanMotifs";
 import GuatemalaFrame from "../components/layout/GuatemalaFrame";
@@ -33,6 +34,7 @@ export default function MainPage() {
         <DonacionCarousel />
         <Voluntariado />
         <Contacto />
+        <Confianza />
       </main>
       <Footer />
     </GuatemalaFrame>

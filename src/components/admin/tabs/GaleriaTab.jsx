@@ -5,6 +5,7 @@ import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import ImageLightbox from "../ImageLightbox";
 import { formatDate } from "./AttentionsTab";
+import { hasScope } from "../../../utils/permissions";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -56,7 +57,11 @@ function collectSiteImages(content, programa, team) {
 
 export default function GaleriaTab() {
   const { authUser, content, programa, team } = useApp();
-  const canManageAllRoles = authUser.role === "admin" || authUser.role === "desarrollador";
+  // El backend (GET /api/attentions/available-roles) ya recorta la
+  // lista a los roles que el permiso "verImagenes" de este rol
+  // permite ver (todos/algunos/ninguno) — aquí solo decidimos si
+  // vale la pena mostrar el selector, intentando siempre el fetch.
+  const canManageAllRoles = hasScope(authUser.permissions, "verImagenes");
 
   const [availableRoles, setAvailableRoles] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
