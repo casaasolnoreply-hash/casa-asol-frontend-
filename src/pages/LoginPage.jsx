@@ -114,13 +114,21 @@ export default function LoginPage() {
               <input
                 value={user}
                 onChange={(e) => { setUser(e.target.value); setErr(""); }}
-                autoFocus
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                // Chrome ignora autoComplete="off" en campos de login y
+                // de todos modos autorellena con una cuenta guardada —
+                // el truco que sí funciona es que el campo empiece
+                // readOnly (así no lo autorellena al cargar la página)
+                // y se vuelva editable apenas la persona lo toca. Por
+                // eso tampoco lleva autoFocus: enfocarlo solo también
+                // quitaría el readOnly antes de tiempo.
+                readOnly
+                onPointerDown={(e) => e.target.removeAttribute("readonly")}
                 style={fieldStyle}
-                onFocus={(e)  => (e.target.style.borderColor = PRIMARY)}
+                onFocus={(e)  => { e.target.removeAttribute("readonly"); e.target.style.borderColor = PRIMARY; }}
                 onBlur={(e)   => (e.target.style.borderColor = "#e0e0e0")}
               />
             </div>
@@ -137,9 +145,10 @@ export default function LoginPage() {
               <PasswordInput
                 value={pass}
                 onChange={(e) => { setPass(e.target.value); setErr(""); }}
-                autoComplete="off"
+                readOnly
+                onPointerDown={(e) => e.target.removeAttribute("readonly")}
                 style={fieldStyle}
-                onFocus={(e)  => (e.target.style.borderColor = PRIMARY)}
+                onFocus={(e)  => { e.target.removeAttribute("readonly"); e.target.style.borderColor = PRIMARY; }}
                 onBlur={(e)   => (e.target.style.borderColor = "#e0e0e0")}
               />
             </div>
