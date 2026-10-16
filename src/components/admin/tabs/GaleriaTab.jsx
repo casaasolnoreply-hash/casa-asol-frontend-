@@ -217,8 +217,8 @@ export default function GaleriaTab() {
         {config && (
           <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={selectStyle}>
             <option value="">Cualquier actividad</option>
-            {config.categories.map((cat) => (
-              <optgroup key={cat.name} label={cat.name}>
+            {config.categories.map((cat, catIndex) => (
+              <optgroup key={`${cat.name}-${catIndex}`} label={cat.name}>
                 {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
               </optgroup>
             ))}

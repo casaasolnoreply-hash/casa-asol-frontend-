@@ -31,6 +31,8 @@ export const api = {
   getPublicRoles:         ()               => req("GET", "/api/roles/public"),
   getRoles:               ()               => req("GET", "/api/roles", undefined, true),
   updateRolePermissions:  (name, permissions) => req("PUT", `/api/roles/${name}`, { permissions }, true),
+  createRole:             (data)            => req("POST", "/api/roles", data, true),
+  deleteRole:             (name)            => req("DELETE", `/api/roles/${name}`, undefined, true),
 
   // Site data
   getData:        (key)        => req("GET",  `/api/data/${key}`),
@@ -79,4 +81,36 @@ export const api = {
   createAttention:             (data)            => req("POST", "/api/attentions",       data, true),
   updateAttention:             (id, data)        => req("PUT",  `/api/attentions/${id}`, data, true),
   deleteAttention:             (id)              => req("DELETE", `/api/attentions/${id}`, undefined, true),
+  getCustomActivityTypes:      ()                 => req("GET",  "/api/attentions/custom-types", undefined, true),
+  updateCustomActivityTypes:   (types)            => req("PUT",  "/api/attentions/custom-types", { types }, true),
+  getActivityCategoryNames:    ()                 => req("GET",  "/api/attentions/category-names", undefined, true),
+
+  // Editor de documentos (informes trabajados como Word)
+  getDocumentsList:        (params = {})       => req("GET",  `/api/documents${Object.keys(params).length ? `?${new URLSearchParams(params).toString()}` : ""}`, undefined, true),
+  getOrCreateDocument:     (reportId)          => req("POST", "/api/documents", { reportId }, true),
+  getDocumentByReport:     (reportId)          => req("GET",  `/api/documents/by-report/${reportId}`, undefined, true),
+  getDocument:             (id)                => req("GET",  `/api/documents/${id}`, undefined, true),
+  autosaveDocument:        (id, content)       => req("PATCH", `/api/documents/${id}/autosave`, { content }, true),
+  saveDocumentVersion:     (id, content, label) => req("POST", `/api/documents/${id}/versions`, { content, label }, true),
+  getDocumentVersions:     (id)                => req("GET",  `/api/documents/${id}/versions`, undefined, true),
+  restoreDocumentVersion:  (id, versionId)     => req("POST", `/api/documents/${id}/versions/${versionId}/restore`, {}, true),
+  submitDocument:          (id)                => req("POST", `/api/documents/${id}/submit`, {}, true),
+  startDocumentReview:     (id)                => req("POST", `/api/documents/${id}/start-review`, {}, true),
+  gradeDocument:           (id, score)         => req("POST", `/api/documents/${id}/grade`, { score }, true),
+  returnDocument:          (id, comment)       => req("POST", `/api/documents/${id}/return`, { comment }, true),
+  getDocumentComments:     (id)                => req("GET",  `/api/documents/${id}/comments`, undefined, true),
+  addDocumentComment:      (id, data)          => req("POST", `/api/documents/${id}/comments`, data, true),
+  resolveDocumentComment:  (id, commentId, resolved) => req("PATCH", `/api/documents/${id}/comments/${commentId}`, { resolved }, true),
+  deleteOriginalDocx:      (id)                => req("DELETE", `/api/documents/${id}/original-docx`, undefined, true),
+  uploadDocx: async (id, file) => {
+    const token = sessionStorage.getItem("ca-token");
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_URL}/api/documents/${id}/upload-docx`, {
+      method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "No se pudo convertir el archivo");
+    return data;
+  },
 };

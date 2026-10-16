@@ -5,6 +5,7 @@ import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import AddImageBtn from "../AddImageBtn";
 import ImageLightbox from "../ImageLightbox";
+import { hasScope } from "../../../utils/permissions";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -20,11 +21,22 @@ export function formatDate(iso) {
   return new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+// Integrantes de la actividad: combina la lista nueva (participants,
+// estudiantes o personas sueltas) con el campo legado de un solo
+// estudiante (beneficiary_name) para registros viejos que no tienen
+// la lista todavía.
+function participantsOf(attention) {
+  if (attention.participants?.length) return attention.participants;
+  if (attention.beneficiary_name) return [{ fullName: attention.beneficiary_name, isStudent: true }];
+  return [];
+}
+
 // Detalle completo de una actividad: toda su información más su propia
 // galería de fotos (clic en una la abre en grande).
 function AttentionDetailModal({ attention, typeLabel, onClose }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const images = attention.images || [];
+  const participants = participantsOf(attention);
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.48)", zIndex: 400 }} />
@@ -39,12 +51,6 @@ function AttentionDetailModal({ attention, typeLabel, onClose }) {
             <Icon name="list" size={15} color="#9ca3af" />
             <span><strong>Fecha:</strong> {formatDate(attention.attention_date)}</span>
           </div>
-          {attention.beneficiary_name && (
-            <div style={{ display: "flex", gap: 8 }}>
-              <Icon name="users" size={15} color="#9ca3af" />
-              <span><strong>Estudiante:</strong> {attention.beneficiary_name}</span>
-            </div>
-          )}
           <div style={{ display: "flex", gap: 8 }}>
             <Icon name="edit" size={15} color="#9ca3af" />
             <span><strong>Registrado por:</strong> {attention.author_username}</span>
@@ -56,6 +62,25 @@ function AttentionDetailModal({ attention, typeLabel, onClose }) {
             </div>
           )}
         </div>
+
+        {participants.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 8, letterSpacing: .5 }}>
+              INTEGRANTES ({participants.length})
+            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {participants.map((p, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#f9fafb", border: "1px solid #eef0f2", borderRadius: 7 }}>
+                  <Icon name="users" size={13} color="#9ca3af" />
+                  <span style={{ fontSize: 13, color: "#374151", flex: 1 }}>{p.fullName}</span>
+                  {p.isStudent && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: PRIMARY, background: `${PRIMARY}12`, padding: "2px 7px", borderRadius: 10 }}>Estudiante</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 8, letterSpacing: .5 }}>
@@ -83,8 +108,83 @@ function AttentionDetailModal({ attention, typeLabel, onClose }) {
   );
 }
 
+// Constructor de integrantes: agrega estudiantes registrados (de un
+// selector) o personas sueltas (nombre libre), y los va sumando a una
+// lista que se puede quitar uno por uno.
+function ParticipantsBuilder({ participants, setParticipants, beneficiaries }) {
+  const [pickBeneficiary, setPickBeneficiary] = useState("");
+  const [guestName, setGuestName] = useState("");
+
+  const alreadyAdded = new Set(participants.filter((p) => p.beneficiaryId).map((p) => p.beneficiaryId));
+  const available = beneficiaries.filter((b) => !alreadyAdded.has(b.id));
+
+  const addStudent = () => {
+    if (!pickBeneficiary) return;
+    const b = beneficiaries.find((x) => String(x.id) === String(pickBeneficiary));
+    if (!b) return;
+    setParticipants([...participants, { beneficiaryId: b.id, fullName: b.full_name, isStudent: true }]);
+    setPickBeneficiary("");
+  };
+
+  const addGuest = () => {
+    const name = guestName.trim();
+    if (!name) return;
+    setParticipants([...participants, { fullName: name, isStudent: false }]);
+    setGuestName("");
+  };
+
+  const remove = (idx) => setParticipants(participants.filter((_, i) => i !== idx));
+
+  return (
+    <div>
+      {participants.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+          {participants.map((p, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#f9fafb", border: "1px solid #eef0f2", borderRadius: 7 }}>
+              <Icon name="users" size={13} color="#9ca3af" />
+              <span style={{ fontSize: 13, color: "#374151", flex: 1 }}>{p.fullName}</span>
+              {p.isStudent && (
+                <span style={{ fontSize: 10, fontWeight: 700, color: PRIMARY, background: `${PRIMARY}12`, padding: "2px 7px", borderRadius: 10 }}>Estudiante</span>
+              )}
+              <button onClick={() => remove(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", display: "flex", padding: 2 }}>
+                <Icon name="x" size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+        <select value={pickBeneficiary} onChange={(e) => setPickBeneficiary(e.target.value)} style={{ ...inputStyle, flex: 1, cursor: "pointer" }}>
+          <option value="">Agregar estudiante...</option>
+          {available.map((b) => <option key={b.id} value={b.id}>{b.full_name}</option>)}
+        </select>
+        <button type="button" onClick={addStudent} disabled={!pickBeneficiary} style={{ padding: "0 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: pickBeneficiary ? "pointer" : "default", opacity: pickBeneficiary ? 1 : .5 }}>
+          <Icon name="plus" size={13} />
+        </button>
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <input
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addGuest(); } }}
+          placeholder="Agregar persona que no es estudiante..."
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <button type="button" onClick={addGuest} disabled={!guestName.trim()} style={{ padding: "0 14px", background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}`, borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: guestName.trim() ? "pointer" : "default", opacity: guestName.trim() ? 1 : .5 }}>
+          <Icon name="plus" size={13} />
+        </button>
+      </div>
+      <p style={{ margin: "6px 0 0", fontSize: 10.5, color: "#9ca3af" }}>
+        Puedes agregar cuantas personas hayan participado — estudiantes registrados, personal, familiares o visitas.
+      </p>
+    </div>
+  );
+}
+
 function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
-  const [form, setForm] = useState(initial || { attentionDate: "", type: config.types[0]?.key || "", beneficiaryId: "", notes: "", images: [] });
+  const [form, setForm] = useState(initial || { attentionDate: "", type: config.types[0]?.key || "", notes: "", images: [] });
+  const [participants, setParticipants] = useState(initial?.participants || []);
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -97,11 +197,14 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
   const submit = async () => {
     if (!form.attentionDate) return setErr("La fecha es obligatoria");
     if (!form.type) return setErr("Elige un tipo de atención");
-    if (typeDef?.requiresBeneficiary && !form.beneficiaryId) return setErr(`"${typeDef.label}" necesita elegir un estudiante`);
+    if (typeDef?.requiresBeneficiary && participants.length === 0) return setErr(`"${typeDef.label}" necesita por lo menos un integrante`);
     setSaving(true);
     setErr("");
     try {
-      await onSave({ ...form, beneficiaryId: typeDef?.requiresBeneficiary ? Number(form.beneficiaryId) : null, images });
+      await onSave({
+        ...form, images,
+        participants: participants.map((p) => p.beneficiaryId ? { beneficiaryId: p.beneficiaryId } : { fullName: p.fullName }),
+      });
       onClose();
     } catch (e) {
       setErr(e.message || "No se pudo guardar");
@@ -127,23 +230,20 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>TIPO</label>
           <select value={form.type} onChange={(e) => set("type", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-            {config.categories.map((cat) => (
-              <optgroup key={cat.name} label={cat.name}>
+            {config.categories.map((cat, catIndex) => (
+              <optgroup key={`${cat.name}-${catIndex}`} label={cat.name}>
                 {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
               </optgroup>
             ))}
           </select>
         </div>
 
-        {typeDef?.requiresBeneficiary && (
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>ESTUDIANTE</label>
-            <select value={form.beneficiaryId} onChange={(e) => set("beneficiaryId", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-              <option value="">Selecciona...</option>
-              {beneficiaries.map((b) => <option key={b.id} value={b.id}>{b.full_name}</option>)}
-            </select>
-          </div>
-        )}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>
+            INTEGRANTES {typeDef?.requiresBeneficiary ? "" : "(OPCIONAL)"} {participants.length > 0 && `— ${participants.length}`}
+          </label>
+          <ParticipantsBuilder participants={participants} setParticipants={setParticipants} beneficiaries={beneficiaries} />
+        </div>
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>NOTAS (OPCIONAL)</label>
@@ -183,7 +283,7 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
 
 export default function AttentionsTab() {
   const { authUser } = useApp();
-  const canManageAllRoles = authUser.role === "admin" || authUser.role === "desarrollador";
+  const canManageAllRoles = hasScope(authUser.permissions, "verImagenes");
 
   const [availableRoles, setAvailableRoles] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -236,8 +336,8 @@ export default function AttentionsTab() {
 
   const handleSave = async (form) => {
     const payload = {
-      attentionDate: form.attentionDate, type: form.type, beneficiaryId: form.beneficiaryId, notes: form.notes,
-      images: form.images || [],
+      attentionDate: form.attentionDate, type: form.type, notes: form.notes,
+      images: form.images || [], participants: form.participants || [],
       ...(canManageAllRoles && { role: effectiveRole }),
     };
     if (modal && modal !== "new") {
@@ -296,9 +396,14 @@ export default function AttentionsTab() {
   const matchesSearch = (a) => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
-    const haystack = [typeLabel(a.type), a.beneficiary_name, a.notes, a.author_username].filter(Boolean).join(" ").toLowerCase();
+    const names = participantsOf(a).map((p) => p.fullName);
+    const haystack = [typeLabel(a.type), ...names, a.notes, a.author_username].filter(Boolean).join(" ").toLowerCase();
     return haystack.includes(q);
   };
+
+  const hasBeneficiary = (a, beneficiaryId) =>
+    String(a.beneficiary_id) === beneficiaryId ||
+    (a.participants || []).some((p) => String(p.beneficiaryId) === beneficiaryId);
 
   // attention_date viene como "2026-10-02T00:00:00.000Z" — comparar solo la
   // parte de fecha (YYYY-MM-DD) evita líos de huso horario en el filtro.
@@ -313,13 +418,13 @@ export default function AttentionsTab() {
 
   const filtered = list.filter((a) =>
     (!typeFilter || a.type === typeFilter) &&
-    (!beneficiaryFilter || String(a.beneficiary_id) === beneficiaryFilter) &&
+    (!beneficiaryFilter || hasBeneficiary(a, beneficiaryFilter)) &&
     matchesDateRange(a) &&
     matchesSearch(a)
   );
 
   const canEditDelete = (a) => a.author_username === authUser.user || canManageAllRoles;
-  const beneficiariesWithHistory = beneficiaries.filter((b) => list.some((a) => a.beneficiary_id === b.id));
+  const beneficiariesWithHistory = beneficiaries.filter((b) => list.some((a) => hasBeneficiary(a, String(b.id))));
 
   return (
     <div>
@@ -341,8 +446,8 @@ export default function AttentionsTab() {
         </div>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={selectStyle}>
           <option value="">Cualquier actividad</option>
-          {config.categories.map((cat) => (
-            <optgroup key={cat.name} label={cat.name}>
+          {config.categories.map((cat, catIndex) => (
+            <optgroup key={`${cat.name}-${catIndex}`} label={cat.name}>
               {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </optgroup>
           ))}
@@ -377,7 +482,8 @@ export default function AttentionsTab() {
         <AttentionModal
           initial={modal === "new" ? null : {
             attentionDate: modal.attention_date?.slice(0, 10) || "", type: modal.type,
-            beneficiaryId: modal.beneficiary_id || "", notes: modal.notes, images: modal.images || [],
+            notes: modal.notes, images: modal.images || [],
+            participants: participantsOf(modal),
           }}
           config={config}
           beneficiaries={beneficiaries}
@@ -396,20 +502,28 @@ export default function AttentionsTab() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {filtered.map((a) => (
+        {filtered.map((a) => {
+          const people = participantsOf(a);
+          return (
           <div key={a.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: `${PRIMARY}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon name="list" size={16} color={PRIMARY} />
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>
-                {typeLabel(a.type)} {a.beneficiary_name && <span style={{ color: PRIMARY, fontWeight: 600 }}>· {a.beneficiary_name}</span>}
+                {typeLabel(a.type)}
+                {people.length === 1 && <span style={{ color: PRIMARY, fontWeight: 600 }}> · {people[0].fullName}</span>}
               </p>
               <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>
                 {formatDate(a.attention_date)} · registrado por {a.author_username}
                 {a.notes && ` · ${a.notes.length > 60 ? `${a.notes.slice(0, 60)}...` : a.notes}`}
               </p>
             </div>
+            {people.length > 1 && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#f3f4f6", color: "#374151", fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 20, flexShrink: 0 }}>
+                <Icon name="users" size={12} color="#6b7280" /> {people.length} personas
+              </span>
+            )}
             {a.images?.length > 0 && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `${PRIMARY}12`, color: PRIMARY, fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 20, flexShrink: 0 }}>
                 <Icon name="image" size={12} color={PRIMARY} /> {a.images.length}
@@ -438,7 +552,8 @@ export default function AttentionsTab() {
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {detailAttention && (

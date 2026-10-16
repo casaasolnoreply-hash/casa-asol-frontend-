@@ -21,6 +21,7 @@ import RolesTab       from "../components/admin/tabs/RolesTab";
 import EstudiantesTab from "../components/admin/tabs/EstudiantesTab";
 import MiInformeTab   from "../components/admin/tabs/MiInformeTab";
 import AttentionsTab  from "../components/admin/tabs/AttentionsTab";
+import ActivityTypesTab from "../components/admin/tabs/ActivityTypesTab";
 import GaleriaTab     from "../components/admin/tabs/GaleriaTab";
 import DashboardTab   from "../components/admin/tabs/DashboardTab";
 
@@ -56,6 +57,7 @@ const ALL_TABS = [
   { id: "mensajes",    icon: "mail",  label: "Mensajes" },
   { id: "estudiantes", icon: "users", label: "Estudiantes" },
   { id: "atenciones",  icon: "list",  label: "Actividades" },
+  { id: "tipos-actividad", icon: "settings", label: "Tipos de actividad" },
   { id: "galeria",     icon: "image", label: "Galería de imágenes" },
   { id: "mi-informe",  icon: "list",  label: "Mi informe" },
   ...ACCOUNT_TABS, ...CONFIG_TABS,
@@ -235,6 +237,9 @@ export default function AdminPage() {
     if (tab === "roles" && !isDeveloper) {
       return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
     }
+    if (tab === "tipos-actividad" && !canManageUsers && !hasScope(authUser?.permissions, "gestionarTiposActividad")) {
+      return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
+    }
     switch (tab) {
       case "programa":     return <ProgramaEditor />;
       case "equipo":       return <EquipoEditor />;
@@ -245,6 +250,7 @@ export default function AdminPage() {
       case "roles":        return <RolesTab />;
       case "estudiantes":  return <EstudiantesTab />;
       case "atenciones":   return <AttentionsTab />;
+      case "tipos-actividad": return <ActivityTypesTab />;
       case "galeria":      return <GaleriaTab />;
       case "mi-informe":   return <MiInformeTab />;
       case "inicio":       return canReviewReports ? (
@@ -319,6 +325,7 @@ export default function AdminPage() {
           {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
           {(canManageUsers || hasScope(authUser?.permissions, "verEstudiantes")) && <NavBtn id="estudiantes" icon="users" label="Estudiantes" />}
           {(canManageUsers || (isOperationalRole && hasScope(authUser?.permissions, "crearActividades"))) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
+          {(canManageUsers || hasScope(authUser?.permissions, "gestionarTiposActividad")) && <NavBtn id="tipos-actividad" icon="settings" label="Tipos de actividad" />}
           {(canManageUsers || (isOperationalRole && hasScope(authUser?.permissions, "crearActividades"))) && <NavBtn id="galeria" icon="image" label="Galería de imágenes" />}
           <NavBtn id="mi-informe" icon="list" label={isOperationalRole ? "Mi informe" : "Informes"} />
 

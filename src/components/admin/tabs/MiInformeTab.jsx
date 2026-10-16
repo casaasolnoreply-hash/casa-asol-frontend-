@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PRIMARY } from "../../../constants/theme";
 import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import { LOGO_PNG_BASE64 } from "../../../assets/logoBase64";
 import { hasScope } from "../../../utils/permissions";
+import { buildLetterhead } from "../../../utils/docxLetterhead";
+import DocumentEditor from "../documents/DocumentEditor";
+import DocumentsTab from "./DocumentsTab";
 
 const inputStyle = {
   width: "100%", padding: "9px 12px", fontSize: 13, fontFamily: "inherit",
@@ -510,32 +513,13 @@ async function downloadReportWord(report, config, roleLabel, siteName = "Casa AS
   // Encabezado (logo + nombre del informe según el rol) y pie de
   // página con el número de página real — a diferencia del PDF
   // impreso desde el navegador, Word sí sabe cuántas páginas tiene el
-  // documento, así que "Página X de Y" es exacto en cada hoja.
-  const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
-  const logoBytes = Uint8Array.from(atob(LOGO_PNG_BASE64), (c) => c.charCodeAt(0));
-  const header = new Header({
-    children: [
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder, insideHorizontal: noBorder, insideVertical: noBorder },
-        rows: [new TableRow({ children: [
-          new TableCell({ width: { size: 15, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [
-            new Paragraph({ children: [new ImageRun({ type: "png", data: logoBytes, transformation: { width: 42, height: 33 } })] }),
-          ] }),
-          new TableCell({ width: { size: 85, type: WidthType.PERCENTAGE }, verticalAlign: VerticalAlign.CENTER, children: [
-            new Paragraph({ children: [run(siteName, { bold: true, size: 22 })] }),
-            new Paragraph({ children: [run(model.title, { size: 18, color: "6b7280" })] }),
-          ] }),
-        ] })],
-      }),
-    ],
-  });
-  const footer = new Footer({
-    children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
-      run("Página ", { size: 18 }), new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 18 }),
-      run(" de ", { size: 18 }), new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 18 }),
-    ] })],
-  });
+  // documento, así que "Página X de Y" es exacto en cada hoja. Mismo
+  // helper que usa el Word del documento trabajado en el editor (ver
+  // utils/docxLetterhead.js) para no repetir este bloque dos veces.
+  const { header, footer } = buildLetterhead(
+    { Header, Footer, Table, TableRow, TableCell, WidthType, VerticalAlign, BorderStyle, Paragraph, TextRun, ImageRun, AlignmentType, PageNumber },
+    { title: model.title, siteName, logoBase64: LOGO_PNG_BASE64 }
+  );
   // Recorre s.items (ver buildReportModel): cada uno es un párrafo
   // simple (con o sin su propio sub-encabezado en negrita, según haya
   // más de un field en la sección) o, si tiene "children", un grupo
@@ -1087,7 +1071,7 @@ function RejectedEditModal({ report, config, roleLabel, canManageAllRoles, effec
 }
 
 /* ── Pantalla de inicio: tabla + filtros ── */
-function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAllRoles, effectiveRole, onReload, siteName }) {
+function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAllRoles, effectiveRole, onReload, siteName, onViewDocuments }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [periodFilter, setPeriodFilter] = useState("");
   const [year, setYear] = useState("");
@@ -1095,6 +1079,65 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
   const [logFor, setLogFor] = useState(null);
   const [viewFor, setViewFor] = useState(null);
   const [correctingFor, setCorrectingFor] = useState(null);
+  const [editorDocId, setEditorDocId] = useState(null);
+  const [editorInitialFile, setEditorInitialFile] = useState(null);
+  const [openingEditorFor, setOpeningEditorFor] = useState(null);
+  const [editorError, setEditorError] = useState("");
+  const [uploadingWord, setUploadingWord] = useState(false);
+  const uploadWordRef = useRef(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+
+  const deleteReport = async (id) => {
+    setDeletingId(id);
+    setDeleteError("");
+    try {
+      await api.deleteReport(id);
+      setConfirmDeleteId(null);
+      onReload();
+    } catch (e) {
+      setDeleteError(e.message || "No se pudo eliminar");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // "Abrir en editor": crea (o recupera, si ya existe) el documento de
+  // trabajo vinculado a este informe — ver DocumentEditor.jsx. El
+  // informe original (narrative/stats) nunca se toca.
+  const openEditor = async (report) => {
+    setOpeningEditorFor(report.id);
+    setEditorError("");
+    try {
+      const doc = await api.getOrCreateDocument(report.id);
+      setEditorDocId(doc.id);
+    } catch (e) {
+      setEditorError(e.message || "No se pudo abrir el editor");
+    } finally {
+      setOpeningEditorFor(null);
+    }
+  };
+
+  // "Subir Word": en vez de llenar el asistente de "Nuevo informe" a
+  // mano, crea de una vez el informe (borrador vacío) y su documento, y
+  // abre el editor con el .docx elegido ya cargado — ver
+  // DocumentEditor.jsx (prop initialFile hace la conversión apenas abre).
+  const handleUploadWord = async (file) => {
+    if (!file) return;
+    setUploadingWord(true);
+    setEditorError("");
+    try {
+      const report = await api.createReport({ role: effectiveRole });
+      const doc = await api.getOrCreateDocument(report.id);
+      setEditorInitialFile(file);
+      setEditorDocId(doc.id);
+    } catch (e) {
+      setEditorError(e.message || "No se pudo subir el archivo");
+    } finally {
+      setUploadingWord(false);
+    }
+  };
 
   const years = [...new Set(reports.map((r) => r.period_start?.slice(0, 4)).filter(Boolean))].sort().reverse();
 
@@ -1122,9 +1165,24 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Mis informes</h2>
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>Borradores, enviados, aceptados y devueltos de tus periodos de reporte</p>
         </div>
-        <button onClick={onNew} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          <Icon name="plus" size={14} /> Nuevo informe
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onViewDocuments} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", color: "#374151", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <Icon name="fileText" size={14} /> Documentos
+          </button>
+          <input
+            ref={uploadWordRef} type="file" accept=".docx" style={{ display: "none" }}
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleUploadWord(f); }}
+          />
+          <button
+            onClick={() => uploadWordRef.current?.click()} disabled={uploadingWord}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}`, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: uploadingWord ? "wait" : "pointer" }}
+          >
+            <Icon name="upload" size={14} /> {uploadingWord ? "Subiendo..." : "Subir Word"}
+          </button>
+          <button onClick={onNew} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <Icon name="plus" size={14} /> Nuevo informe
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}>
@@ -1164,6 +1222,16 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
             {reports.length === 0 ? "Todavía no has creado informes." : "Nada coincide con estos filtros."}
           </p>
         </div>
+      )}
+
+      {editorError && <p style={{ color: "#ef4444", fontSize: 12, marginBottom: 10 }}>{editorError}</p>}
+      {deleteError && <p style={{ color: "#ef4444", fontSize: 12, marginBottom: 10 }}>{deleteError}</p>}
+      {editorDocId && (
+        <DocumentEditor
+          documentId={editorDocId}
+          initialFile={editorInitialFile}
+          onClose={() => { setEditorDocId(null); setEditorInitialFile(null); onReload(); }}
+        />
       )}
 
       {logFor && <BitacoraModal report={logFor} onClose={() => setLogFor(null)} />}
@@ -1210,6 +1278,22 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
                 )}
                 <button onClick={() => downloadReportPdf(r, config, roleLabel, siteName)} title="Descargar PDF" style={actionBtn}><Icon name="fileText" size={13} /></button>
                 <button onClick={() => downloadReportWord(r, config, roleLabel, siteName)} title="Descargar Word" style={actionBtn}><Icon name="book" size={13} /></button>
+                <button onClick={() => openEditor(r)} disabled={openingEditorFor === r.id} title="Abrir en editor" style={actionBtn}><Icon name="expand" size={13} /></button>
+                {confirmDeleteId === r.id ? (
+                  <>
+                    <span style={{ fontSize: 11, color: "#ef4444", alignSelf: "center" }}>¿Eliminar?</span>
+                    <button onClick={() => deleteReport(r.id)} disabled={deletingId === r.id} style={{ background: "#ef4444", color: "#fff", border: "none", borderRadius: 6, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      {deletingId === r.id ? "..." : "Sí"}
+                    </button>
+                    <button onClick={() => setConfirmDeleteId(null)} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontSize: 11, cursor: "pointer", color: "#555" }}>No</button>
+                  </>
+                ) : (
+                  r.status !== "aceptado" && (
+                    <button onClick={() => { setConfirmDeleteId(r.id); setDeleteError(""); }} title="Eliminar informe" style={{ ...actionBtn, color: "#ef4444" }}>
+                      <Icon name="trash" size={13} />
+                    </button>
+                  )
+                )}
               </div>
             </div>
           );
@@ -1247,17 +1331,20 @@ function Stepper({ step, setStep }) {
 export default function MiInformeTab() {
   const { authUser, content } = useApp();
   const siteName = content.brand?.siteName || "Casa ASOL";
-  // Antes esta lista de roles estaba fija en el código. Ahora es el
-  // permiso "verInformesPorUsuario" (configurable por rol en Roles y
-  // permisos): quién puede elegir de cuál rol ver/crear informes, y
-  // revisar (aceptar/devolver) lo que envía cada área operativa.
+  // Antes esta lista de roles estaba fija en el código. Ahora son dos
+  // permisos separados (configurables por rol en Roles y permisos):
+  // "verInformesPorUsuario" decide quién puede elegir de cuál rol
+  // ver/crear informes y LEER lo que envía cada área operativa;
+  // "aceptarInformes" decide, aparte, quién puede además
+  // aceptarlos/devolverlos (se puede dar el primero sin el segundo).
   const canManageAllRoles = hasScope(authUser.permissions, "verInformesPorUsuario");
+  const canAccept = hasScope(authUser.permissions, "aceptarInformes");
 
   const [availableRoles, setAvailableRoles] = useState(null); // null = aún no se sabe (solo aplica a canManageAllRoles)
   const [selectedRole, setSelectedRole] = useState(null);
   const [config, setConfig] = useState(null);
   const [reports, setReports] = useState([]);
-  const [view, setView] = useState("inicio"); // "inicio" | "wizard"
+  const [view, setView] = useState("inicio"); // "inicio" | "wizard" | "documentos"
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1480,7 +1567,20 @@ export default function MiInformeTab() {
         <InformesInicio
           reports={reports} config={config} roleLabel={roleLabel} onOpen={openReport} onNew={openNew}
           canManageAllRoles={canManageAllRoles} effectiveRole={effectiveRole} onReload={load} siteName={siteName}
+          onViewDocuments={() => setView("documentos")}
         />
+      </div>
+    );
+  }
+
+  if (view === "documentos") {
+    return (
+      <div>
+        {roleSelector}
+        <button onClick={() => setView("inicio")} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#6b7280", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, marginBottom: 16 }}>
+          <Icon name="chevronDown" size={12} color="#6b7280" style={{ transform: "rotate(90deg)" }} /> Volver a mis informes
+        </button>
+        <DocumentsTab />
       </div>
     );
   }
@@ -1523,7 +1623,7 @@ export default function MiInformeTab() {
           </div>
         )}
 
-        {canManageAllRoles && draft.status === "enviado" && (
+        {canAccept && draft.status === "enviado" && (
           <ReviewPanel reportId={draft.id} onDone={reloadDraftAfterReview} />
         )}
 
