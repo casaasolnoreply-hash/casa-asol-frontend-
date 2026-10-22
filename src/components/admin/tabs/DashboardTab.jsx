@@ -26,11 +26,14 @@ function StatTile({ icon, color, value, label }) {
   );
 }
 
-// Panel de KPIs para quien revisa informes de todas las áreas
-// (directoras, admin, desarrollador) — un vistazo de cuántos informes
+// Panel de inicio: para quien revisa informes de todas las áreas
+// (directoras, admin, desarrollador) es un vistazo de cuántos informes
 // hay, en qué estado, por área, y cuáles están esperando su revisión
 // ahora mismo, sin tener que entrar a "Informes" y elegir rol por rol.
-export default function DashboardTab({ onGoToReports }) {
+// Para cualquier otro rol (que solo ve su propio informe) es una
+// versión reducida: sus propias cifras, sin la tabla "por área" (solo
+// tendría su propia fila) ni la cola de revisión (no es quien revisa).
+export default function DashboardTab({ canReviewReports = false, onGoToReports }) {
   const { authUser } = useApp();
   const [reports, setReports] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -67,72 +70,87 @@ export default function DashboardTab({ onGoToReports }) {
     <div>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Bienvenida, {authUser?.user}</h2>
-        <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>Resumen de los informes de todas las áreas</p>
+        <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>
+          {canReviewReports ? "Resumen de los informes de todas las áreas" : "Resumen de tu informe periódico"}
+        </p>
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
-        <StatTile icon="list" color={PRIMARY} value={reports.length} label="Informes totales" />
+        <StatTile icon="list" color={PRIMARY} value={reports.length} label={canReviewReports ? "Informes totales" : "Tus informes"} />
         <StatTile icon="clock" color={STATUS_COLOR.enviado} value={byStatus.enviado} label="Esperando revisión" />
         <StatTile icon="check" color={STATUS_COLOR.aceptado} value={byStatus.aceptado} label="Aceptados" />
         <StatTile icon="warning" color={STATUS_COLOR.devuelto} value={byStatus.devuelto} label="Devueltos" />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Pendientes de revisión</h3>
-        {onGoToReports && (
-          <button onClick={onGoToReports} style={{ background: "none", border: "none", color: PRIMARY, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            Ver todos los informes →
-          </button>
-        )}
-      </div>
+      {canReviewReports && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Pendientes de revisión</h3>
+            {onGoToReports && (
+              <button onClick={onGoToReports} style={{ background: "none", border: "none", color: PRIMARY, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Ver todos los informes →
+              </button>
+            )}
+          </div>
 
-      {pending.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "36px 24px", background: "#f9fafb", borderRadius: 12, border: "2px dashed #e0e0e0", marginBottom: 28 }}>
-          <Icon name="check" size={28} color="#d1d5db" />
-          <p style={{ margin: "10px 0 0", color: "#9ca3af", fontSize: 13 }}>No hay informes esperando revisión.</p>
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
-          {pending.map((r) => (
-            <div key={r.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, minWidth: 70 }}>{r.report_code || "—"}</span>
-              <span style={{ fontSize: 13, color: "#1a1a2e", flex: 1, minWidth: 120 }}>{roleLabel(r.role)}</span>
-              <span style={{ fontSize: 12, color: "#9ca3af" }}>Enviado el {formatDateTime(r.submitted_at)}</span>
+          {pending.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "36px 24px", background: "#f9fafb", borderRadius: 12, border: "2px dashed #e0e0e0", marginBottom: 28 }}>
+              <Icon name="check" size={28} color="#d1d5db" />
+              <p style={{ margin: "10px 0 0", color: "#9ca3af", fontSize: 13 }}>No hay informes esperando revisión.</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
+              {pending.map((r) => (
+                <div key={r.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, minWidth: 70 }}>{r.report_code || "—"}</span>
+                  <span style={{ fontSize: 13, color: "#1a1a2e", flex: 1, minWidth: 120 }}>{roleLabel(r.role)}</span>
+                  <span style={{ fontSize: 12, color: "#9ca3af" }}>Enviado el {formatDateTime(r.submitted_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Por área</h3>
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 480 }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb" }}>
+                    <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>Área</th>
+                    <th style={{ textAlign: "center", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Total</th>
+                    {Object.keys(STATUS_LABEL).map((s) => (
+                      <th key={s} style={{ textAlign: "center", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: STATUS_COLOR[s] }}>{STATUS_LABEL[s]}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {roleRows.length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "#9ca3af" }}>Todavía no hay informes.</td></tr>
+                  )}
+                  {roleRows.map(([role, counts]) => (
+                    <tr key={role} style={{ borderTop: "1px solid #f0f0f0" }}>
+                      <td style={{ padding: "10px 16px", fontWeight: 600, color: "#1a1a2e" }}>{roleLabel(role)}</td>
+                      <td style={{ textAlign: "center", padding: "10px 12px", fontWeight: 700 }}>{counts.total}</td>
+                      {Object.keys(STATUS_LABEL).map((s) => (
+                        <td key={s} style={{ textAlign: "center", padding: "10px 12px", color: counts[s] ? "#1a1a2e" : "#d1d5db" }}>{counts[s] || 0}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
-      <h3 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700, color: "#1a1a2e" }}>Por área</h3>
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 480 }}>
-            <thead>
-              <tr style={{ background: "#f9fafb" }}>
-                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" }}>Área</th>
-                <th style={{ textAlign: "center", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "#6b7280" }}>Total</th>
-                {Object.keys(STATUS_LABEL).map((s) => (
-                  <th key={s} style={{ textAlign: "center", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: STATUS_COLOR[s] }}>{STATUS_LABEL[s]}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {roleRows.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "#9ca3af" }}>Todavía no hay informes.</td></tr>
-              )}
-              {roleRows.map(([role, counts]) => (
-                <tr key={role} style={{ borderTop: "1px solid #f0f0f0" }}>
-                  <td style={{ padding: "10px 16px", fontWeight: 600, color: "#1a1a2e" }}>{roleLabel(role)}</td>
-                  <td style={{ textAlign: "center", padding: "10px 12px", fontWeight: 700 }}>{counts.total}</td>
-                  {Object.keys(STATUS_LABEL).map((s) => (
-                    <td key={s} style={{ textAlign: "center", padding: "10px 12px", color: counts[s] ? "#1a1a2e" : "#d1d5db" }}>{counts[s] || 0}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {!canReviewReports && onGoToReports && (
+        <button
+          onClick={onGoToReports}
+          style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+        >
+          <Icon name="list" size={14} /> Ir a Mi informe
+        </button>
+      )}
     </div>
   );
 }

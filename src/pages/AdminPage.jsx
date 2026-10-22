@@ -64,9 +64,10 @@ const ALL_TABS = [
   { id: "inicio", icon: "home", label: "Inicio" },
 ];
 
-// Editar el contenido del sitio (y su configuración) es exclusivo del
-// rol "desarrollador" — el resto de roles no debe ver el botón ni
-// poder llegar a estas pantallas.
+// Editar el contenido del sitio (y su configuración) requiere el
+// permiso "manageContent" (ver Roles y permisos) — desarrollador
+// siempre lo tiene por fullAccess, pero ahora es asignable a
+// cualquier otro rol, no exclusivo de desarrollador.
 const SITE_EDIT_TAB_IDS = new Set([...SITE_TABS, ...CONFIG_TABS].map((t) => t.id));
 
 /* ── Inline stats editor ── */
@@ -147,6 +148,10 @@ export default function AdminPage() {
   // "manageUsers" (ver Roles y permisos), configurable para cualquier
   // rol. admin y desarrollador lo siguen teniendo igual que antes.
   const canManageUsers = hasScope(authUser?.permissions, "manageUsers");
+  // Editar el sitio (secciones públicas, equipo, estadísticas, imágenes,
+  // navegación y ajustes) — antes exclusivo de desarrollador, ahora
+  // asignable a cualquier rol desde "Roles y permisos".
+  const canManageContent = hasScope(authUser?.permissions, "manageContent");
   // "verUsuarios" deja abrir Usuarios/Solicitudes en solo lectura, sin
   // las capacidades de canManageUsers (crear, editar, aprobar...).
   const canViewUsers = canManageUsers || hasScope(authUser?.permissions, "verUsuarios");
@@ -162,7 +167,7 @@ export default function AdminPage() {
   const isDirector = authUser?.role === "directora_tecnica" || authUser?.role === "directora_programatica";
   const canReviewReports = isDeveloper || authUser?.role === "admin" || isDirector;
 
-  const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canViewUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
+  const defaultTab = canManageContent ? "sections" : canViewMessages ? "mensajes" : canViewUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
   const [tab, setTab]           = useState(defaultTab);
   // Qué sección del editor de contenido (ContentTab) está activa — se
   // mantiene en sincronía con `tab` cuando se navega por el sidebar, y
@@ -232,7 +237,7 @@ export default function AdminPage() {
   );
 
   const renderContent = () => {
-    if (SITE_EDIT_TAB_IDS.has(tab) && !isDeveloper) {
+    if (SITE_EDIT_TAB_IDS.has(tab) && !canManageContent) {
       return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
     }
     if (tab === "mensajes" && !canViewMessages) {
@@ -260,16 +265,7 @@ export default function AdminPage() {
       case "tipos-actividad": return <ActivityTypesTab />;
       case "galeria":      return <GaleriaTab />;
       case "mi-informe":   return <MiInformeTab />;
-      case "inicio":       return canReviewReports ? (
-        <DashboardTab onGoToReports={() => setTab("mi-informe")} />
-      ) : (
-        <div style={{ textAlign: "center", padding: "56px 24px" }}>
-          <Icon name="home" size={36} color="#d1d5db" />
-          <p style={{ margin: "14px 0 0", color: "#9ca3af", fontSize: 14 }}>
-            Bienvenido/a, {authUser?.user}. Todavía no tienes secciones asignadas en el panel.
-          </p>
-        </div>
-      );
+      case "inicio":       return <DashboardTab canReviewReports={canReviewReports} onGoToReports={() => setTab("mi-informe")} />;
       case "perfil":       return <ProfileTab />;
       case "sections":     return <SectionsTab />;
       case "images":       return <ImagesTab />;
@@ -329,7 +325,7 @@ export default function AdminPage() {
           <div className="ca-hide-collapsed" style={{ padding: "8px 20px 4px", fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: "rgba(255,255,255,.22)", textTransform: "uppercase" }}>
             General
           </div>
-          {canReviewReports && <NavBtn id="inicio" icon="home" label="Inicio" />}
+          <NavBtn id="inicio" icon="home" label="Inicio" />
           {(canManageUsers || hasScope(authUser?.permissions, "verEstudiantes")) && <NavBtn id="estudiantes" icon="users" label="Estudiantes" />}
           {(canManageUsers || (isOperationalRole && hasScope(authUser?.permissions, "crearActividades"))) && <NavBtn id="atenciones" icon="list" label="Actividades" />}
           {(canManageUsers || hasScope(authUser?.permissions, "gestionarTiposActividad")) && <NavBtn id="tipos-actividad" icon="settings" label="Tipos de actividad" />}
@@ -359,8 +355,8 @@ export default function AdminPage() {
 
         {/* Bottom: edit button + user card + links */}
         <div style={{ padding: "10px 0", borderTop: "1px solid rgba(255,255,255,.08)", flexShrink: 0 }}>
-          {/* Editar sitio — solo desarrollador */}
-          {isDeveloper && (
+          {/* Editar sitio — requiere "manageContent" */}
+          {canManageContent && (
             <button
               className="ca-bottom-btn"
               title="Editar sitio"
@@ -459,8 +455,8 @@ export default function AdminPage() {
         </div>
       </main>
 
-      {/* ── CONFIG DRAWER (slides from right) — solo desarrollador ── */}
-      {configOpen && isDeveloper && (
+      {/* ── CONFIG DRAWER (slides from right) — requiere "manageContent" ── */}
+      {configOpen && canManageContent && (
         <>
           {/* Backdrop */}
           <div

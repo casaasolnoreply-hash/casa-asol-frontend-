@@ -8,6 +8,7 @@ import Toggle from "../../ui/Toggle";
 // son sobre lo que el propio rol puede hacer, así que un solo
 // interruptor basta.
 const SIMPLE_PERMISSIONS = [
+  { key: "manageContent",    icon: "edit",  label: "Editar el sitio web", hint: "Puede abrir \"Editar sitio\": secciones públicas, Equipo, Estadísticas, Logo e imágenes, Navegación y Ajustes generales." },
   { key: "viewMessages",     icon: "mail",  label: "Ver mensajes de contacto y voluntariado", hint: "Puede abrir la bandeja de mensajes recibidos del sitio público." },
   { key: "crearInformes",    icon: "list",  label: "Llenar su propio informe periódico",      hint: "Puede abrir \"Mi informe\" y enviar su propio reporte." },
   { key: "verEstudiantes",   icon: "users", label: "Ver la lista de estudiantes",             hint: "Puede abrir la pestaña \"Estudiantes\" del panel, en modo solo lectura." },
