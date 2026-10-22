@@ -109,7 +109,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 20 }}>
               <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 7, letterSpacing: .8 }}>
-                USUARIO
+                USUARIO O CORREO
               </label>
               <input
                 value={user}

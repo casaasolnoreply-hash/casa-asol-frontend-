@@ -143,7 +143,14 @@ export default function AdminPage() {
   const siteName = content?.brand?.siteName || "Casa ASOL";
   const navigate = useNavigate();
   const isDeveloper = authUser?.role === "desarrollador";
-  const canManageUsers = authUser?.role === "admin" || authUser?.role === "desarrollador";
+  // Antes era admin/desarrollador nada más — ahora es el permiso
+  // "manageUsers" (ver Roles y permisos), configurable para cualquier
+  // rol. admin y desarrollador lo siguen teniendo igual que antes.
+  const canManageUsers = hasScope(authUser?.permissions, "manageUsers");
+  // "verUsuarios" deja abrir Usuarios/Solicitudes en solo lectura, sin
+  // las capacidades de canManageUsers (crear, editar, aprobar...).
+  const canViewUsers = canManageUsers || hasScope(authUser?.permissions, "verUsuarios");
+  const canManageRoles = isDeveloper || hasScope(authUser?.permissions, "gestionarRoles");
   // "viewMessages" lo otorga el desarrollador por rol (Roles y permisos);
   // desarrollador siempre lo tiene por su acceso total.
   const canViewMessages = isDeveloper || !!authUser?.permissions?.viewMessages;
@@ -155,7 +162,7 @@ export default function AdminPage() {
   const isDirector = authUser?.role === "directora_tecnica" || authUser?.role === "directora_programatica";
   const canReviewReports = isDeveloper || authUser?.role === "admin" || isDirector;
 
-  const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canManageUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
+  const defaultTab = isDeveloper ? "sections" : canViewMessages ? "mensajes" : canViewUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
   const [tab, setTab]           = useState(defaultTab);
   // Qué sección del editor de contenido (ContentTab) está activa — se
   // mantiene en sincronía con `tab` cuando se navega por el sidebar, y
@@ -186,9 +193,9 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (!canManageUsers) return;
+    if (!canViewUsers) return;
     api.getUserRequests().then((list) => setPendingRequests(list.length)).catch(() => {});
-  }, [canManageUsers, tab]);
+  }, [canViewUsers, tab]);
 
   const current = SITE_WRAPPER_IDS.has(tab) ? SITE_SECTIONS.find((s) => s.id === siteSub) : ALL_TABS.find((m) => m.id === tab);
   const handleLogout = () => { logout(); navigate("/"); };
@@ -231,10 +238,10 @@ export default function AdminPage() {
     if (tab === "mensajes" && !canViewMessages) {
       return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
     }
-    if ((tab === "usuarios" || tab === "solicitudes") && !canManageUsers) {
+    if ((tab === "usuarios" || tab === "solicitudes") && !canViewUsers) {
       return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
     }
-    if (tab === "roles" && !isDeveloper) {
+    if (tab === "roles" && !canManageRoles) {
       return <p style={{ color: "#9ca3af", fontSize: 13 }}>No tienes acceso a esta sección.</p>;
     }
     if (tab === "tipos-actividad" && !canManageUsers && !hasScope(authUser?.permissions, "gestionarTiposActividad")) {
@@ -249,7 +256,7 @@ export default function AdminPage() {
       case "solicitudes":  return <RequestsTab />;
       case "roles":        return <RolesTab />;
       case "estudiantes":  return <EstudiantesTab />;
-      case "atenciones":   return <AttentionsTab />;
+      case "atenciones":   return <AttentionsTab onManageTypes={() => setTab("tipos-actividad")} />;
       case "tipos-actividad": return <ActivityTypesTab />;
       case "galeria":      return <GaleriaTab />;
       case "mi-informe":   return <MiInformeTab />;
@@ -338,14 +345,14 @@ export default function AdminPage() {
             </>
           )}
 
-          {canManageUsers && (
+          {(canViewUsers || canManageRoles) && (
             <>
               <div className="ca-hide-collapsed" style={{ padding: "16px 20px 4px", fontSize: 9, fontWeight: 700, letterSpacing: 1.2, color: "rgba(255,255,255,.22)", textTransform: "uppercase" }}>
                 Cuentas
               </div>
-              <NavBtn id="usuarios"    icon="users" label="Usuarios" />
-              <NavBtn id="solicitudes" icon="mail"  label="Solicitudes de acceso" badge={pendingRequests} />
-              {isDeveloper && <NavBtn id="roles" icon="settings" label="Roles y permisos" />}
+              {canViewUsers && <NavBtn id="usuarios"    icon="users" label="Usuarios" />}
+              {canViewUsers && <NavBtn id="solicitudes" icon="mail"  label="Solicitudes de acceso" badge={pendingRequests} />}
+              {canManageRoles && <NavBtn id="roles" icon="settings" label="Roles y permisos" />}
             </>
           )}
         </nav>

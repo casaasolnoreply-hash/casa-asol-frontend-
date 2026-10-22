@@ -31,6 +31,7 @@ export const api = {
   getPublicRoles:         ()               => req("GET", "/api/roles/public"),
   getRoles:               ()               => req("GET", "/api/roles", undefined, true),
   updateRolePermissions:  (name, permissions) => req("PUT", `/api/roles/${name}`, { permissions }, true),
+  renameRole:             (name, data)       => req("PUT", `/api/roles/${name}`, data, true),
   createRole:             (data)            => req("POST", "/api/roles", data, true),
   deleteRole:             (name)            => req("DELETE", `/api/roles/${name}`, undefined, true),
 
@@ -50,6 +51,7 @@ export const api = {
   createUser: (u)       => req("POST",   "/api/users",         u,         true),
   updateUser: (id, u)   => req("PUT",    `/api/users/${id}`,   u,         true),
   deleteUser: (id)      => req("DELETE", `/api/users/${id}`,   undefined, true),
+  reorderUsers: (order) => req("PUT",    "/api/users/reorder", { order }, true),
 
   // Solicitudes de acceso (solo admin / desarrollador)
   getUserRequests:  ()             => req("GET",  "/api/users/requests",                 undefined, true),

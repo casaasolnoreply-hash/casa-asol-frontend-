@@ -10,9 +10,13 @@ import Toggle from "../../ui/Toggle";
 const SIMPLE_PERMISSIONS = [
   { key: "viewMessages",     icon: "mail",  label: "Ver mensajes de contacto y voluntariado", hint: "Puede abrir la bandeja de mensajes recibidos del sitio público." },
   { key: "crearInformes",    icon: "list",  label: "Llenar su propio informe periódico",      hint: "Puede abrir \"Mi informe\" y enviar su propio reporte." },
-  { key: "verEstudiantes",   icon: "users", label: "Ver la lista de estudiantes",             hint: "Puede abrir la pestaña \"Estudiantes\" del panel." },
-  { key: "crearActividades", icon: "image", label: "Registrar actividades",                   hint: "Puede abrir \"Actividades\" y \"Galería\" y crear registros nuevos." },
+  { key: "verEstudiantes",   icon: "users", label: "Ver la lista de estudiantes",             hint: "Puede abrir la pestaña \"Estudiantes\" del panel, en modo solo lectura." },
+  { key: "manageBeneficiaries", icon: "users", label: "Crear, editar y eliminar estudiantes", hint: "Además de verlos, puede agregar estudiantes nuevos, editar sus datos o eliminarlos." },
   { key: "gestionarTiposActividad", icon: "settings", label: "Gestionar tipos de actividad", hint: "Puede abrir \"Tipos de actividad\" y crear, editar o quitar categorías y tipos personalizados." },
+  { key: "verUsuarios",      icon: "eye",   label: "Ver usuarios y solicitudes de acceso",      hint: "Puede abrir \"Usuarios\" y \"Solicitudes de acceso\" en modo solo lectura, sin crear, editar ni aprobar/rechazar nada." },
+  { key: "restablecerCredenciales", icon: "settings", label: "Restablecer contraseñas", hint: "Puede cambiarle la contraseña a cualquier cuenta, sin poder tocar su rol, correo o estado." },
+  { key: "manageUsers",      icon: "users", label: "Gestionar usuarios y solicitudes de acceso", hint: "Puede crear, editar (rol, correo, estado), eliminar cuentas y aprobar o rechazar solicitudes — incluye ver y restablecer contraseñas." },
+  { key: "gestionarRoles",   icon: "settings", label: "Gestionar roles y permisos", hint: "Puede abrir \"Roles y permisos\": crear roles nuevos, cambiar los permisos de cualquier rol (menos desarrollador) y eliminar cualquier rol que no tenga cuentas ni historial asociado." },
 ];
 
 // Permisos "escalables": cada uno puede ser Todos / Algunos (una
@@ -24,7 +28,16 @@ const SCOPED_PERMISSIONS = [
   { key: "verImagenes",           icon: "image",    label: "Ver imágenes de otros roles",        hint: "En la Galería, además de sus propias fotos, puede ver las de los roles que elijas aquí." },
   { key: "verInformes",           icon: "barChart",  label: "Ver informes de otros roles",        hint: "En \"Informes\", además de lo suyo, puede ver los reportes de los roles que elijas aquí." },
   { key: "verInformesPorUsuario", icon: "list",      label: "Revisar informes de otros roles",    hint: "Puede abrir y leer los informes enviados por los roles que elijas aquí (sin poder aceptarlos/devolverlos)." },
-  { key: "aceptarInformes",       icon: "check",     label: "Aceptar o devolver informes de otros roles", hint: "Puede aprobar o rechazar los informes enviados por los roles que elijas aquí, y calificar sus documentos en el editor." },
+  { key: "aceptarInformes",       icon: "check",     label: "Aceptar o devolver informes de otros roles", hint: "Puede aprobar o rechazar los informes enviados por los roles que elijas aquí, y calificar sus documentos en el editor. Nadie puede aceptar/calificar su propio informe, sin importar este permiso." },
+];
+
+// "crearActividades" es distinto a los de arriba: no es sobre otros
+// roles, es sobre QUÉ CATEGORÍAS del propio expediente (Atenciones,
+// Reuniones, etc.) puede registrar este rol — cada rol tiene las
+// suyas, por eso CategoryScopedPermissionRow las trae aparte en vez de
+// usar una lista fija como "allRoles".
+const CATEGORY_SCOPED_PERMISSIONS = [
+  { key: "crearActividades", icon: "image", label: "Registrar actividades", hint: "En \"Actividades\", puede crear registros nuevos de las categorías que elijas aquí (de su propio expediente)." },
 ];
 
 const SEGMENTS = [
@@ -32,11 +45,16 @@ const SEGMENTS = [
   { value: "some", label: "Algunos" },
   { value: "none", label: "Solo lo propio" },
 ];
+const CATEGORY_SEGMENTS = [
+  { value: "all",  label: "Todas" },
+  { value: "some", label: "Algunas" },
+  { value: "none", label: "Ninguna" },
+];
 
-function Segmented({ value, onChange, disabled }) {
+function Segmented({ value, onChange, disabled, segments = SEGMENTS }) {
   return (
     <div style={{ display: "inline-flex", border: "1px solid #e0e0e0", borderRadius: 8, padding: 2, background: "#f7f8fa", opacity: disabled ? .6 : 1 }}>
-      {SEGMENTS.map((s) => {
+      {segments.map((s) => {
         const active = value === s.value;
         return (
           <button
@@ -65,7 +83,7 @@ const chipStyle = (checked) => ({
 
 const scopeState = (value) => (value === true ? "all" : Array.isArray(value) ? "some" : "none");
 
-function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSave, saving }) {
+function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSave, saving, segments = SEGMENTS, excludeSelf = true, emptyMessage = "No hay otros roles para elegir todavía." }) {
   const value = role.permissions?.[permKey];
   const state = scopeState(value);
   const selected = Array.isArray(value) ? value : [];
@@ -81,6 +99,8 @@ function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSav
     onSave(permKey, next);
   };
 
+  const options = excludeSelf ? allRoles.filter((r) => r.name !== role.name) : allRoles;
+
   return (
     <div style={{ padding: "10px 0", borderBottom: "1px solid #f5f5f5" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -92,11 +112,11 @@ function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSav
           <p style={{ margin: "1px 0 0", fontSize: 10.5, color: "#9ca3af" }}>{hint}</p>
         </div>
         {saving && <Icon name="clock" size={12} color="#9ca3af" />}
-        <Segmented value={state} disabled={saving} onChange={setState} />
+        <Segmented value={state} disabled={saving} onChange={setState} segments={segments} />
       </div>
       {state === "some" && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 9, paddingLeft: 38 }}>
-          {allRoles.filter((r) => r.name !== role.name).map((r) => (
+          {options.map((r) => (
             <label key={r.name} style={chipStyle(selected.includes(r.name))}>
               <input
                 type="checkbox"
@@ -107,12 +127,44 @@ function ScopedPermissionRow({ role, permKey, icon, label, hint, allRoles, onSav
               {r.label}
             </label>
           ))}
-          {allRoles.length <= 1 && (
-            <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>No hay otros roles para elegir todavía.</span>
+          {options.length === 0 && (
+            <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>{emptyMessage}</span>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+// "crearActividades": cada rol tiene su propio catálogo de categorías
+// de actividad (ver attentionFields.js), así que a diferencia de
+// ScopedPermissionRow normal, aquí hay que traerlo primero para ese
+// rol en concreto antes de poder mostrar el selector.
+function CategoryScopedPermissionRow(props) {
+  const [categories, setCategories] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCategories(null);
+    api.getAttentionConfig(props.role.name)
+      .then((cfg) => { if (!cancelled) setCategories(cfg.categories.map((c) => ({ name: c.name, label: c.name }))); })
+      .catch(() => { if (!cancelled) setCategories([]); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.role.name]);
+
+  if (categories === null) {
+    return <p style={{ margin: "10px 0", fontSize: 11.5, color: "#9ca3af" }}>Cargando categorías de actividad...</p>;
+  }
+
+  return (
+    <ScopedPermissionRow
+      {...props}
+      allRoles={categories}
+      excludeSelf={false}
+      segments={CATEGORY_SEGMENTS}
+      emptyMessage="Este rol todavía no tiene categorías de actividad configuradas."
+    />
   );
 }
 
@@ -153,6 +205,11 @@ export default function RolesTab() {
 
   const [confirmDeleteRole, setConfirmDeleteRole] = useState(null);
   const [deletingRole, setDeletingRole] = useState(null);
+
+  const [renamingRole, setRenamingRole] = useState(null);
+  const [renameLabel, setRenameLabel] = useState("");
+  const [renameDescription, setRenameDescription] = useState("");
+  const [savingRename, setSavingRename] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -212,6 +269,20 @@ export default function RolesTab() {
       setError(e.message || "No se pudo eliminar el rol");
     } finally {
       setDeletingRole(null);
+    }
+  };
+
+  const saveRename = async (name) => {
+    if (!renameLabel.trim()) return;
+    setSavingRename(true);
+    try {
+      const updated = await api.renameRole(name, { label: renameLabel.trim(), description: renameDescription.trim() });
+      setRoles((rs) => rs.map((r) => (r.name === name ? updated : r)));
+      setRenamingRole(null);
+    } catch (e) {
+      setError(e.message || "No se pudo cambiar el nombre del rol");
+    } finally {
+      setSavingRename(false);
     }
   };
 
@@ -282,8 +353,20 @@ export default function RolesTab() {
         )}
         {visibleRoles.map((role) => {
           const isOpen = expanded === role.name;
+          const isRenaming = renamingRole === role.name;
           return (
             <div key={role.name} style={{ background: "#fff", border: `1px solid ${isOpen ? PRIMARY : "#e8e8e8"}`, borderRadius: 10, overflow: "hidden", transition: "border-color .15s" }}>
+              {isRenaming ? (
+                <div style={{ padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <input value={renameLabel} onChange={(e) => setRenameLabel(e.target.value)} placeholder="Nombre del rol" style={{ ...roleInputStyle, flex: 1, minWidth: 160 }} />
+                  <input value={renameDescription} onChange={(e) => setRenameDescription(e.target.value)} placeholder="Descripción breve" style={{ ...roleInputStyle, flex: 2, minWidth: 200 }} />
+                  <button onClick={() => saveRename(role.name)} disabled={savingRename || !renameLabel.trim()} style={{ padding: "7px 14px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    {savingRename ? "..." : "Guardar"}
+                  </button>
+                  <button onClick={() => setRenamingRole(null)} style={{ padding: "7px 14px", background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                </div>
+              ) : (
+              <>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <button
                   onClick={() => setExpanded(isOpen ? null : role.name)}
@@ -292,6 +375,12 @@ export default function RolesTab() {
                   <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a2e" }}>{role.label}</p>
                   <span style={{ fontSize: 11, color: "#9ca3af", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{role.description}</span>
                   <Icon name="chevronDown" size={13} color={isOpen ? PRIMARY : "#9ca3af"} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0 }} />
+                </button>
+                <button
+                  onClick={() => { setRenamingRole(role.name); setRenameLabel(role.label); setRenameDescription(role.description || ""); }}
+                  title="Cambiar nombre" style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", display: "flex", padding: "0 10px", flexShrink: 0 }}
+                >
+                  <Icon name="edit" size={14} />
                 </button>
                 {role.removable && (
                   confirmDeleteRole === role.name ? (
@@ -329,6 +418,25 @@ export default function RolesTab() {
                   ))}
 
                   <p style={{ margin: "16px 0 2px", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#b0b8c8", textTransform: "uppercase" }}>
+                    Qué categorías de actividad puede registrar
+                  </p>
+                  <p style={{ margin: "0 0 4px", fontSize: 10.5, color: "#9ca3af", lineHeight: 1.6 }}>
+                    "Ninguna" bloquea por completo "Actividades" y "Galería" para este rol.
+                  </p>
+                  {CATEGORY_SCOPED_PERMISSIONS.map((p) => (
+                    <CategoryScopedPermissionRow
+                      key={p.key}
+                      role={role}
+                      permKey={p.key}
+                      icon={p.icon}
+                      label={p.label}
+                      hint={p.hint}
+                      saving={savingKey === `${role.name}:${p.key}`}
+                      onSave={(k, v) => save(role, k, v)}
+                    />
+                  ))}
+
+                  <p style={{ margin: "16px 0 2px", fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#b0b8c8", textTransform: "uppercase" }}>
                     Permisos sobre otros roles
                   </p>
                   <p style={{ margin: "0 0 4px", fontSize: 10.5, color: "#9ca3af", lineHeight: 1.6 }}>
@@ -348,6 +456,8 @@ export default function RolesTab() {
                     />
                   ))}
                 </div>
+              )}
+              </>
               )}
             </div>
           );

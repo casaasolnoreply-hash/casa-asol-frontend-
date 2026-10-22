@@ -182,8 +182,16 @@ function ParticipantsBuilder({ participants, setParticipants, beneficiaries }) {
   );
 }
 
-function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
-  const [form, setForm] = useState(initial || { attentionDate: "", type: config.types[0]?.key || "", notes: "", images: [] });
+function AttentionModal({ initial, config, beneficiaries, allowedCategories, onClose, onSave }) {
+  // Al crear, el tipo solo puede ser de una categoría permitida para
+  // quien está registrando (ver "crearActividades" en Roles y
+  // permisos) — null = todas. Al editar, se respeta la categoría que
+  // ya tenía el registro aunque ya no esté permitida, para no dejar
+  // el selector sin esa opción.
+  const visibleCategories = !allowedCategories
+    ? config.categories
+    : config.categories.filter((c) => allowedCategories.includes(c.name) || c.types.some((t) => t.key === initial?.type));
+  const [form, setForm] = useState(initial || { attentionDate: "", type: visibleCategories[0]?.types[0]?.key || "", notes: "", images: [] });
   const [participants, setParticipants] = useState(initial?.participants || []);
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -230,7 +238,7 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6 }}>TIPO</label>
           <select value={form.type} onChange={(e) => set("type", e.target.value)} style={{ ...inputStyle, cursor: "pointer" }}>
-            {config.categories.map((cat, catIndex) => (
+            {visibleCategories.map((cat, catIndex) => (
               <optgroup key={`${cat.name}-${catIndex}`} label={cat.name}>
                 {cat.types.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
               </optgroup>
@@ -281,9 +289,21 @@ function AttentionModal({ initial, config, beneficiaries, onClose, onSave }) {
   );
 }
 
-export default function AttentionsTab() {
+export default function AttentionsTab({ onManageTypes }) {
   const { authUser } = useApp();
   const canManageAllRoles = hasScope(authUser.permissions, "verImagenes");
+  const canManageTypes = hasScope(authUser.permissions, "manageUsers") || hasScope(authUser.permissions, "gestionarTiposActividad");
+  // "crearActividades" ahora es por categoría (ver RolesTab.jsx): true
+  // = todas, un arreglo = solo esas, en cuyo caso se filtra el
+  // selector de "Nuevo registro" — null acá significa "sin filtrar".
+  // fullAccess (desarrollador) siempre cuenta como "todas" — igual que
+  // hasScope()/scopeIncludes(), que son los que de verdad se usan para
+  // decidir acceso; leer el valor crudo sin ese caso especial dejaba a
+  // desarrollador con el selector vacío y sin poder crear nada.
+  const crearScope = authUser.permissions?.crearActividades;
+  const allowedCategories = authUser.permissions?.fullAccess || crearScope === true
+    ? null
+    : Array.isArray(crearScope) ? crearScope : [];
 
   const [availableRoles, setAvailableRoles] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -433,6 +453,14 @@ export default function AttentionsTab() {
         <div>
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Actividades</h2>
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>{config.label} — registro individual de cada atención, taller o reunión</p>
+          {canManageTypes && onManageTypes && (
+            <button
+              onClick={onManageTypes}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 6, padding: 0, background: "none", border: "none", color: PRIMARY, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}
+            >
+              <Icon name="settings" size={12} /> Agregar, editar o quitar tipos de actividad
+            </button>
+          )}
         </div>
         <button onClick={() => setModal("new")} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
           <Icon name="plus" size={14} /> Nuevo registro
@@ -486,6 +514,7 @@ export default function AttentionsTab() {
             participants: participantsOf(modal),
           }}
           config={config}
+          allowedCategories={allowedCategories}
           beneficiaries={beneficiaries}
           onClose={() => setModal(null)}
           onSave={handleSave}

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { PRIMARY } from "../../../constants/theme";
+import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import PasswordInput from "../../ui/PasswordInput";
+import { hasScope } from "../../../utils/permissions";
 
 const SOURCE_LABEL = { system: "Formulario", google: "Google" };
 
@@ -83,6 +85,8 @@ function ApproveForm({ request, onDone, onCancel }) {
 }
 
 export default function RequestsTab() {
+  const { authUser } = useApp();
+  const canManage = hasScope(authUser?.permissions, "manageUsers");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -149,18 +153,20 @@ export default function RequestsTab() {
                 {SOURCE_LABEL[req.source] || req.source}
               </span>
 
-              <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-                {approvingId !== req.id && (
-                  <>
-                    <button onClick={() => setApprovingId(req.id)} style={{ padding: "7px 14px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                      Aprobar
-                    </button>
-                    <button onClick={() => reject(req)} style={{ padding: "7px 14px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                      Rechazar
-                    </button>
-                  </>
-                )}
-              </div>
+              {canManage && (
+                <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                  {approvingId !== req.id && (
+                    <>
+                      <button onClick={() => setApprovingId(req.id)} style={{ padding: "7px 14px", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        Aprobar
+                      </button>
+                      <button onClick={() => reject(req)} style={{ padding: "7px 14px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        Rechazar
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <p style={{ margin: "10px 0 0", fontSize: 10, color: "#b0b8c8" }}>Solicitado el {formatDate(req.created_at)}</p>

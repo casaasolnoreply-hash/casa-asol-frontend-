@@ -4,10 +4,31 @@ import { useApp } from "../../../context/AppContext";
 import { api } from "../../../api/client";
 import Icon from "../../ui/Icon";
 import PasswordInput from "../../ui/PasswordInput";
+import { hasScope } from "../../../utils/permissions";
 
 function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Mismo patrón de botones subir/bajar que "Equipo" (EquipoEditor.jsx).
+function MoveButtons({ onMoveUp, onMoveDown, canMoveUp, canMoveDown }) {
+  const btnStyle = (enabled) => ({
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: 24, height: 20, padding: 0, borderRadius: 5,
+    background: enabled ? "#fff" : "#f3f4f6", border: "1px solid #e0e8f0",
+    color: enabled ? "#6b7280" : "#d1d5db", cursor: enabled ? "pointer" : "default",
+  });
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <button onClick={onMoveUp} disabled={!canMoveUp} title="Subir" style={btnStyle(canMoveUp)}>
+        <Icon name="chevronDown" size={11} color="currentColor" style={{ transform: "rotate(180deg)" }} />
+      </button>
+      <button onClick={onMoveDown} disabled={!canMoveDown} title="Bajar" style={btnStyle(canMoveDown)}>
+        <Icon name="chevronDown" size={11} color="currentColor" />
+      </button>
+    </div>
+  );
 }
 
 const inputStyle = {
@@ -133,6 +154,27 @@ export default function UsersTab() {
   const isSelf = (u) => u.username === authUser?.user;
   const canGrantDeveloper = authUser?.role === "desarrollador";
   const assignableRoles = roles.filter((r) => r.name !== "desarrollador" || canGrantDeveloper);
+  // "manageUsers" deja crear/editar/eliminar; sin él, esta pantalla es
+  // de solo lectura salvo que además tenga "restablecerCredenciales"
+  // (puede cambiar contraseñas sin tocar rol/correo/estado de nadie).
+  const canManage = hasScope(authUser?.permissions, "manageUsers");
+  const canResetCredentials = canManage || hasScope(authUser?.permissions, "restablecerCredenciales");
+
+  // Orden manual (como "Equipo"): intercambia con el vecino de arriba
+  // o abajo y manda la lista completa ya reordenada.
+  const moveUser = async (index, direction) => {
+    const swapWith = index + direction;
+    if (swapWith < 0 || swapWith >= users.length) return;
+    const next = [...users];
+    [next[index], next[swapWith]] = [next[swapWith], next[index]];
+    setUsers(next);
+    try {
+      await api.reorderUsers(next.map((u) => u.id));
+    } catch (e) {
+      setError(e.message || "No se pudo reordenar");
+      load();
+    }
+  };
 
   const setErrFor = (id, msg) => setRowError((m) => ({ ...m, [id]: msg }));
 
@@ -176,9 +218,11 @@ export default function UsersTab() {
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a2e" }}>Usuarios</h2>
           <p style={{ margin: "3px 0 0", fontSize: 12, color: "#9ca3af" }}>Cuentas con acceso al sistema y su rol</p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          <Icon name="plus" size={14} /> Nuevo usuario
-        </button>
+        {canManage && (
+          <button onClick={() => setShowCreate(true)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <Icon name="plus" size={14} /> Nuevo usuario
+          </button>
+        )}
       </div>
 
       {error && <p style={{ color: "#ef4444", fontSize: 13, marginBottom: 14 }}>{error}</p>}
@@ -188,9 +232,15 @@ export default function UsersTab() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {users.map((u) => (
+        {users.map((u, index) => (
           <div key={u.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              {canManage && (
+                <MoveButtons
+                  onMoveUp={() => moveUser(index, -1)} onMoveDown={() => moveUser(index, 1)}
+                  canMoveUp={index > 0} canMoveDown={index < users.length - 1}
+                />
+              )}
               <div style={{ width: 34, height: 34, borderRadius: "50%", background: `${PRIMARY}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <span style={{ color: PRIMARY, fontSize: 12, fontWeight: 700 }}>{u.username.slice(0, 2).toUpperCase()}</span>
               </div>
@@ -202,44 +252,58 @@ export default function UsersTab() {
                 <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>{u.email || "sin correo"}</p>
               </div>
 
-              <select
-                value={u.role}
-                disabled={isSelf(u) || (u.role === "desarrollador" && !canGrantDeveloper)}
-                onChange={(e) => changeRole(u, e.target.value)}
-                style={{ padding: "6px 10px", border: "1.5px solid #e0e0e0", borderRadius: 6, fontSize: 12, fontFamily: "inherit", cursor: isSelf(u) ? "not-allowed" : "pointer" }}
-              >
-                {roles.filter((r) => r.name === u.role || r.name !== "desarrollador" || canGrantDeveloper).map((r) => (
-                  <option key={r.name} value={r.name}>{r.label}</option>
-                ))}
-              </select>
+              {canManage ? (
+                <select
+                  value={u.role}
+                  disabled={isSelf(u) || (u.role === "desarrollador" && !canGrantDeveloper)}
+                  onChange={(e) => changeRole(u, e.target.value)}
+                  style={{ padding: "6px 10px", border: "1.5px solid #e0e0e0", borderRadius: 6, fontSize: 12, fontFamily: "inherit", cursor: isSelf(u) ? "not-allowed" : "pointer" }}
+                >
+                  {roles.filter((r) => r.name === u.role || r.name !== "desarrollador" || canGrantDeveloper).map((r) => (
+                    <option key={r.name} value={r.name}>{r.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <span style={{ padding: "5px 10px", background: "#f3f4f6", borderRadius: 6, fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                  {roles.find((r) => r.name === u.role)?.label || u.role}
+                </span>
+              )}
 
-              <button
-                onClick={() => toggleActive(u)}
-                disabled={isSelf(u)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 14,
-                  border: `1px solid ${u.active ? "#bbf7d0" : "#fecaca"}`,
-                  background: u.active ? "#f0fdf4" : "#fef2f2",
-                  color: u.active ? "#16a34a" : "#dc2626",
-                  fontSize: 11, fontWeight: 700, cursor: isSelf(u) ? "not-allowed" : "pointer",
-                }}
-              >
-                {u.active ? "Activo" : "Desactivado"}
-              </button>
+              {canManage ? (
+                <button
+                  onClick={() => toggleActive(u)}
+                  disabled={isSelf(u)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 14,
+                    border: `1px solid ${u.active ? "#bbf7d0" : "#fecaca"}`,
+                    background: u.active ? "#f0fdf4" : "#fef2f2",
+                    color: u.active ? "#16a34a" : "#dc2626",
+                    fontSize: 11, fontWeight: 700, cursor: isSelf(u) ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {u.active ? "Activo" : "Desactivado"}
+                </button>
+              ) : (
+                <span style={{ padding: "4px 12px", borderRadius: 14, border: `1px solid ${u.active ? "#bbf7d0" : "#fecaca"}`, background: u.active ? "#f0fdf4" : "#fef2f2", color: u.active ? "#16a34a" : "#dc2626", fontSize: 11, fontWeight: 700 }}>
+                  {u.active ? "Activo" : "Desactivado"}
+                </span>
+              )}
 
               <span style={{ fontSize: 11, color: "#b0b8c8", marginLeft: "auto" }}>
                 Último acceso: {formatDate(u.last_login)}
               </span>
 
-              {resettingId === u.id ? (
-                <ResetPasswordRow userId={u.id} onDone={() => setResettingId(null)} onCancel={() => setResettingId(null)} />
-              ) : (
-                <button onClick={() => setResettingId(u.id)} title="Restablecer contraseña" style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", cursor: "pointer", display: "flex", color: "#6b7280" }}>
-                  <Icon name="settings" size={13} />
-                </button>
+              {canResetCredentials && (
+                resettingId === u.id ? (
+                  <ResetPasswordRow userId={u.id} onDone={() => setResettingId(null)} onCancel={() => setResettingId(null)} />
+                ) : (
+                  <button onClick={() => setResettingId(u.id)} title="Restablecer contraseña" style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, padding: "6px 8px", cursor: "pointer", display: "flex", color: "#6b7280" }}>
+                    <Icon name="settings" size={13} />
+                  </button>
+                )
               )}
 
-              {!isSelf(u) && (
+              {canManage && !isSelf(u) && (
                 confirmDeleteId === u.id ? (
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => remove(u)} style={{ background: "#ef4444", color: "#fff", border: "none", borderRadius: 6, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Confirmar</button>
