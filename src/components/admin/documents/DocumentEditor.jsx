@@ -529,13 +529,19 @@ export default function DocumentEditor({ documentId, onClose, initialFile }) {
     }
   };
 
-  const applyDocxFile = useCallback(async (file) => {
+  const applyDocxFile = useCallback(async (file, { autoSubmit = false } = {}) => {
     setUploadingDocx(true);
     setError("");
     try {
       const { html } = await api.uploadDocx(documentId, file);
       editor.commands.setContent(html);
       await api.saveDocumentVersion(documentId, editor.getJSON(), "Importado desde .docx");
+      // "Subir Word" (ver initialFile más abajo): un documento que llega
+      // como archivo de Word ya terminado se manda a revisión de una
+      // vez, sin pedir un segundo clic en "Enviar a revisión" — el
+      // periodo/fechas del informe no importan para esto, ya pueden
+      // quedar vacíos (ver MiInformeTab.jsx handleUploadWord).
+      if (autoSubmit) await api.submitDocument(documentId);
       await reload();
     } catch (e2) {
       setError(e2.message);
@@ -558,7 +564,7 @@ export default function DocumentEditor({ documentId, onClose, initialFile }) {
   useEffect(() => {
     if (!initialFile || autoUploadDone.current || !editor || loading) return;
     autoUploadDone.current = true;
-    applyDocxFile(initialFile);
+    applyDocxFile(initialFile, { autoSubmit: true });
   }, [initialFile, editor, loading, applyDocxFile]);
 
   const removeOriginalDocx = async () => {

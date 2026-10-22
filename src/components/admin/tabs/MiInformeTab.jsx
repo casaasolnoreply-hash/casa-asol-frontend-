@@ -1336,8 +1336,12 @@ export default function MiInformeTab() {
   // "verInformesPorUsuario" decide quién puede elegir de cuál rol
   // ver/crear informes y LEER lo que envía cada área operativa;
   // "aceptarInformes" decide, aparte, quién puede además
-  // aceptarlos/devolverlos (se puede dar el primero sin el segundo).
-  const canManageAllRoles = hasScope(authUser.permissions, "verInformesPorUsuario");
+  // aceptarlos/devolverlos. Cualquiera de los dos ya debe dejar elegir
+  // el rol y ver su lista — quien solo tiene "aceptarInformes" (sin
+  // "verInformesPorUsuario") también necesita llegar hasta ahí para
+  // poder aceptar o devolver algo; si no, el permiso de aceptar queda
+  // sin forma de usarse.
+  const canManageAllRoles = hasScope(authUser.permissions, "verInformesPorUsuario") || hasScope(authUser.permissions, "aceptarInformes");
   const canAccept = hasScope(authUser.permissions, "aceptarInformes");
 
   const [availableRoles, setAvailableRoles] = useState(null); // null = aún no se sabe (solo aplica a canManageAllRoles)

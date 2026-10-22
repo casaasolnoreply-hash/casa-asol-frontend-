@@ -165,7 +165,11 @@ export default function AdminPage() {
   // de las demás áreas (ver MiInformeTab canManageAllRoles) — su
   // pantalla de inicio es el panel de KPIs, no "Mi informe".
   const isDirector = authUser?.role === "directora_tecnica" || authUser?.role === "directora_programatica";
-  const canReviewReports = isDeveloper || authUser?.role === "admin" || isDirector;
+  // Antes era fijo a desarrollador/admin/directoras — ahora cualquier
+  // rol con "aceptarInformes" (asignable desde Roles y permisos)
+  // también debe ver el panel de KPIs en vez de la versión reducida,
+  // igual que ya puede en "Mi informe" (ver MiInformeTab canManageAllRoles).
+  const canReviewReports = isDeveloper || authUser?.role === "admin" || isDirector || hasScope(authUser?.permissions, "aceptarInformes");
 
   const defaultTab = canManageContent ? "sections" : canViewMessages ? "mensajes" : canViewUsers ? "usuarios" : isDirector ? "inicio" : isOperationalRole ? "mi-informe" : "inicio";
   const [tab, setTab]           = useState(defaultTab);
