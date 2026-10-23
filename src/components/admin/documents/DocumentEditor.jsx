@@ -14,7 +14,7 @@ import { buildLetterhead } from "../../../utils/docxLetterhead";
 
 const STATUS_LABEL = {
   borrador: "Borrador", enviado: "Enviado para revisión", en_revision: "En revisión",
-  calificado: "Calificado", devuelto_a_correccion: "Devuelto para corrección",
+  calificado: "Aceptado", devuelto_a_correccion: "Devuelto para corrección",
 };
 const STATUS_COLOR = {
   borrador: "#d97706", enviado: "#2563eb", en_revision: "#7c3aed",
@@ -331,7 +331,7 @@ function CommentsPanel({ documentId, doc, comments, onReload, canGrade, isAuthor
 
       {canGrade && doc.status === "en_revision" && (
         <div style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 9, padding: "12px 14px" }}>
-          <p style={{ margin: "0 0 10px", fontSize: 12.5, fontWeight: 700, color: "#6b21a8" }}>Calificar documento</p>
+          <p style={{ margin: "0 0 10px", fontSize: 12.5, fontWeight: 700, color: "#6b21a8" }}>Este documento está esperando revisión</p>
           {mode === "return" ? (
             <div>
               <textarea value={returnComment} onChange={(e) => setReturnComment(e.target.value)} placeholder="¿Qué hay que corregir?" style={{ ...inputStyle, minHeight: 60, resize: "vertical", marginBottom: 8 }} />
@@ -342,10 +342,10 @@ function CommentsPanel({ documentId, doc, comments, onReload, canGrade, isAuthor
             </div>
           ) : (
             <>
-              <input value={score} onChange={(e) => setScore(e.target.value)} placeholder="Nota (ej. 95, 8.5/10, Excelente...)" style={{ ...inputStyle, marginBottom: 8 }} />
+              <input value={score} onChange={(e) => setScore(e.target.value)} placeholder="Nota (opcional, ej. 95, 8.5/10, Excelente...)" style={{ ...inputStyle, marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button onClick={grade} disabled={saving} style={{ ...primaryBtn, fontSize: 11 }}>Calificar</button>
-                <button onClick={() => setMode("return")} disabled={saving} style={{ ...dangerBtn, fontSize: 11 }}>Devolver</button>
+                <button onClick={grade} disabled={saving} style={{ ...primaryBtn, fontSize: 11 }}>Aceptar informe</button>
+                <button onClick={() => setMode("return")} disabled={saving} style={{ ...dangerBtn, fontSize: 11 }}>Devolver para corrección</button>
               </div>
             </>
           )}

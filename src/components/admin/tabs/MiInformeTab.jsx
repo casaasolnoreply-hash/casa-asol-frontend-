@@ -25,8 +25,14 @@ function formatBucketLabel(bucket, granularity) {
   if (granularity === "semanal") return `Semana del ${d.toLocaleDateString("es-GT", { day: "2-digit", month: "short" })}`;
   return d.toLocaleDateString("es-GT", { day: "2-digit", month: "short" });
 }
-const STATUS_LABEL = { borrador: "Borrador", enviado: "Enviado", aceptado: "Aceptado", devuelto: "Devuelto para corrección" };
-const STATUS_COLOR = { borrador: "#d97706", enviado: "#2563eb", aceptado: "#16a34a", devuelto: "#dc2626" };
+const STATUS_LABEL = { borrador: "Borrador", enviado: "Enviado", en_revision: "En revisión", aceptado: "Aceptado", devuelto: "Devuelto para corrección" };
+const STATUS_COLOR = { borrador: "#d97706", enviado: "#2563eb", en_revision: "#7c3aed", aceptado: "#16a34a", devuelto: "#dc2626" };
+// Valor especial del selector de rol: en vez de obligar a elegir un
+// rol a la vez, quien ve varios o todos de una vez puede elegir ver
+// la lista combinada — cada fila ya trae su propio "role", así que las
+// acciones que necesitan la configuración de informes de ese rol en
+// concreto (ver, descargar, editar) la piden al vuelo (getConfigForRole).
+const ALL_ROLES_VALUE = "__todos__";
 const STEPS = ["Periodo", "Descripción", "Cifras del informe", "Revisar y enviar"];
 
 const blankDraft = () => ({
@@ -723,6 +729,8 @@ function BitacoraModal({ report, onClose }) {
   }
   if (report.status === "enviado") {
     events.push({ label: "Pendiente de revisión", date: null, icon: "clock", color: "#d97706" });
+  } else if (report.status === "en_revision") {
+    events.push({ label: "Alguien ya lo está revisando", date: report.reviewed_at, icon: "clock", color: "#7c3aed" });
   } else if (report.status === "aceptado") {
     events.push({ label: "Aceptado", date: report.reviewed_at, icon: "check", color: "#16a34a" });
   } else if (report.status === "devuelto") {
@@ -1071,7 +1079,7 @@ function RejectedEditModal({ report, config, roleLabel, canManageAllRoles, effec
 }
 
 /* ── Pantalla de inicio: tabla + filtros ── */
-function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAllRoles, effectiveRole, onReload, siteName, onViewDocuments }) {
+function InformesInicio({ reports, config, roleLabel, roleLabelOf, getConfigForRole, viewingAll, onOpen, onNew, canManageAllRoles, effectiveRole, onReload, siteName, onViewDocuments }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [periodFilter, setPeriodFilter] = useState("");
   const [year, setYear] = useState("");
@@ -1158,6 +1166,16 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
 
   const selectStyle = { padding: "8px 12px", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 12, fontWeight: 600, fontFamily: "inherit", color: "#374151", cursor: "pointer", background: "#fff" };
 
+  // Viendo "Todos", cada fila puede ser de un rol distinto al que ya
+  // está cargado en "config" — se trae el correcto al vuelo (cacheado
+  // por getConfigForRole) antes de ver/descargar/corregir esa fila en
+  // concreto. Viendo un solo rol, el "config" ambiente ya es el
+  // correcto y no hace falta pedir nada de nuevo.
+  const resolveRowConfig = async (r) =>
+    viewingAll
+      ? { config: await getConfigForRole(r.role), roleLabel: roleLabelOf(r.role) }
+      : { config, roleLabel };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
@@ -1169,19 +1187,25 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
           <button onClick={onViewDocuments} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", color: "#374151", border: "1.5px solid #e0e0e0", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
             <Icon name="fileText" size={14} /> Documentos
           </button>
-          <input
-            ref={uploadWordRef} type="file" accept=".docx" style={{ display: "none" }}
-            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleUploadWord(f); }}
-          />
-          <button
-            onClick={() => uploadWordRef.current?.click()} disabled={uploadingWord}
-            style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}`, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: uploadingWord ? "wait" : "pointer" }}
-          >
-            <Icon name="upload" size={14} /> {uploadingWord ? "Subiendo..." : "Subir Word"}
-          </button>
-          <button onClick={onNew} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-            <Icon name="plus" size={14} /> Nuevo informe
-          </button>
+          {/* Crear informe nuevo necesita un rol concreto — viendo
+              "Todos" no hay uno solo para el cuál crearlo. */}
+          {!viewingAll && (
+            <>
+              <input
+                ref={uploadWordRef} type="file" accept=".docx" style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) handleUploadWord(f); }}
+              />
+              <button
+                onClick={() => uploadWordRef.current?.click()} disabled={uploadingWord}
+                style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}`, borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: uploadingWord ? "wait" : "pointer" }}
+              >
+                <Icon name="upload" size={14} /> {uploadingWord ? "Subiendo..." : "Subir Word"}
+              </button>
+              <button onClick={onNew} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                <Icon name="plus" size={14} /> Nuevo informe
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1235,11 +1259,11 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
       )}
 
       {logFor && <BitacoraModal report={logFor} onClose={() => setLogFor(null)} />}
-      {viewFor && <ReportViewModal report={viewFor} config={config} roleLabel={roleLabel} onClose={() => setViewFor(null)} />}
+      {viewFor && <ReportViewModal report={viewFor.report} config={viewFor.config} roleLabel={viewFor.roleLabel} onClose={() => setViewFor(null)} />}
       {correctingFor && (
         <RejectedEditModal
-          report={correctingFor} config={config} roleLabel={roleLabel}
-          canManageAllRoles={canManageAllRoles} effectiveRole={effectiveRole}
+          report={correctingFor.report} config={correctingFor.config} roleLabel={correctingFor.roleLabel}
+          canManageAllRoles={canManageAllRoles} effectiveRole={correctingFor.report.role}
           onClose={() => setCorrectingFor(null)} onSaved={onReload}
         />
       )}
@@ -1258,6 +1282,7 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
                   {r.period_type ? PERIOD_LABEL[r.period_type] : "Periodo sin definir"}
                 </p>
                 <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9ca3af" }}>
+                  {viewingAll && <span style={{ fontWeight: 700, color: "#6b7280" }}>{roleLabelOf(r.role)} · </span>}
                   {r.period_start ? `${formatDate(r.period_start)} – ${formatDate(r.period_end)}` : `Creado el ${formatDate(r.created_at)}`}
                 </p>
               </div>
@@ -1266,18 +1291,18 @@ function InformesInicio({ reports, config, roleLabel, onOpen, onNew, canManageAl
               </span>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => setLogFor(r)} title="Bitácora" style={actionBtn}><Icon name="clock" size={13} /></button>
-                <button onClick={() => setViewFor(r)} title="Ver informe" style={actionBtn}><Icon name="eye" size={13} /></button>
+                <button onClick={async () => setViewFor({ report: r, ...(await resolveRowConfig(r)) })} title="Ver informe" style={actionBtn}><Icon name="eye" size={13} /></button>
                 {isEditable(r.status) && (
                   <button
-                    onClick={() => (r.status === "devuelto" ? setCorrectingFor(r) : onOpen(r))}
+                    onClick={async () => (r.status === "devuelto" ? setCorrectingFor({ report: r, ...(await resolveRowConfig(r)) }) : onOpen(r))}
                     title={r.status === "devuelto" ? "Corregir" : "Editar"}
                     style={actionBtn}
                   >
                     <Icon name="edit" size={13} />
                   </button>
                 )}
-                <button onClick={() => downloadReportPdf(r, config, roleLabel, siteName)} title="Descargar PDF" style={actionBtn}><Icon name="fileText" size={13} /></button>
-                <button onClick={() => downloadReportWord(r, config, roleLabel, siteName)} title="Descargar Word" style={actionBtn}><Icon name="book" size={13} /></button>
+                <button onClick={async () => { const { config: cfg, roleLabel: lbl } = await resolveRowConfig(r); downloadReportPdf(r, cfg, lbl, siteName); }} title="Descargar PDF" style={actionBtn}><Icon name="fileText" size={13} /></button>
+                <button onClick={async () => { const { config: cfg, roleLabel: lbl } = await resolveRowConfig(r); downloadReportWord(r, cfg, lbl, siteName); }} title="Descargar Word" style={actionBtn}><Icon name="book" size={13} /></button>
                 <button onClick={() => openEditor(r)} disabled={openingEditorFor === r.id} title="Abrir en editor" style={actionBtn}><Icon name="expand" size={13} /></button>
                 {confirmDeleteId === r.id ? (
                   <>
@@ -1347,6 +1372,7 @@ export default function MiInformeTab() {
   const [availableRoles, setAvailableRoles] = useState(null); // null = aún no se sabe (solo aplica a canManageAllRoles)
   const [selectedRole, setSelectedRole] = useState(null);
   const [config, setConfig] = useState(null);
+  const [configCache, setConfigCache] = useState({}); // { [role]: config } — para "Todos" y para abrir un informe de otro rol sin perder el que ya estaba cargado
   const [reports, setReports] = useState([]);
   const [view, setView] = useState("inicio"); // "inicio" | "wizard" | "documentos"
   const [step, setStep] = useState(0);
@@ -1356,6 +1382,12 @@ export default function MiInformeTab() {
   const [saving, setSaving] = useState(false);
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const [calculating, setCalculating] = useState(false);
+  // Rol real del informe que se está creando/editando en el asistente
+  // — separado de "selectedRole" porque, viendo "Todos", cada fila
+  // puede ser de un rol distinto al del selector, y cambiar
+  // "selectedRole" ahí dispararía de nuevo "load" (ver el efecto más
+  // abajo) y por lo tanto volvería a "inicio" antes de tiempo.
+  const [editingRole, setEditingRole] = useState(null);
 
   const {
     draft, setDraft, resetPeriodTypeTouched,
@@ -1364,8 +1396,21 @@ export default function MiInformeTab() {
     addListItem, removeListItem, setListItem,
   } = useReportDraft(config, blankDraft());
 
-  const effectiveRole = canManageAllRoles ? selectedRole : authUser.role;
+  const viewingAll = canManageAllRoles && selectedRole === ALL_ROLES_VALUE;
+  const effectiveRole = canManageAllRoles ? (viewingAll ? null : selectedRole) : authUser.role;
   const roleLabel = canManageAllRoles ? (availableRoles?.find((r) => r.name === effectiveRole)?.label || effectiveRole) : effectiveRole;
+  const roleLabelOf = (role) => availableRoles?.find((r) => r.name === role)?.label || role;
+
+  // Trae (y cachea) la configuración de informes de un rol puntual —
+  // para "Todos", cada fila puede ser de un rol distinto al elegido en
+  // el selector, así que no alcanza con el "config" ambiente de arriba.
+  const getConfigForRole = useCallback(async (role) => {
+    if (configCache[role]) return configCache[role];
+    const cfg = await api.getReportConfig(role);
+    setConfigCache((c) => (c[role] ? c : { ...c, [role]: cfg }));
+    return cfg;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configCache]);
 
   // admin/desarrollador: primero averiguar qué roles tienen informes
   // configurados, y elegir el primero por defecto.
@@ -1378,22 +1423,36 @@ export default function MiInformeTab() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!effectiveRole) { setLoading(false); return; }
+    // Antes de que availableRoles traiga la lista, selectedRole es
+    // null (y por lo tanto effectiveRole también) — ahí sí hay que
+    // esperar. Viendo "Todos", en cambio, effectiveRole es null A
+    // PROPÓSITO, así que el guard mira selectedRole, no effectiveRole.
+    if (canManageAllRoles ? !selectedRole : !effectiveRole) { setLoading(false); return; }
     setError("");
     setLoading(true);
     try {
-      const [cfg, list] = await Promise.all([
-        api.getReportConfig(effectiveRole),
-        api.getReports(canManageAllRoles ? effectiveRole : undefined),
-      ]);
-      setConfig(cfg);
-      setReports(list);
+      if (viewingAll) {
+        // Sin "role" en la query, el backend ya trae todo lo que el
+        // alcance de verInformes/verInformesPorUsuario/aceptarInformes
+        // permita ver (ver mergeScope en el backend) — exactamente la
+        // lista combinada que hace falta acá.
+        const list = await api.getReports();
+        setConfig(null);
+        setReports(list);
+      } else {
+        const cfg = configCache[effectiveRole] || await api.getReportConfig(effectiveRole);
+        const list = await api.getReports(canManageAllRoles ? effectiveRole : undefined);
+        setConfig(cfg);
+        setConfigCache((c) => (c[effectiveRole] ? c : { ...c, [effectiveRole]: cfg }));
+        setReports(list);
+      }
     } catch (e) {
       setError(e.message || "No se pudo cargar la configuración de informes");
     } finally {
       setLoading(false);
     }
-  }, [effectiveRole, canManageAllRoles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveRole, canManageAllRoles, viewingAll, selectedRole]);
 
   useEffect(() => { load(); setView("inicio"); }, [load]);
 
@@ -1402,14 +1461,21 @@ export default function MiInformeTab() {
   // periodo es lo mínimo que el informe necesita para existir.
   const periodIncomplete = !draft.periodType || !draft.periodStart || !draft.periodEnd;
 
-  const openNew = () => { setDraft(blankDraft()); setStep(0); setNotice(""); setError(""); setConfirmingSubmit(false); resetPeriodTypeTouched(); setView("wizard"); };
+  const openNew = () => { setEditingRole(effectiveRole); setDraft(blankDraft()); setStep(0); setNotice(""); setError(""); setConfirmingSubmit(false); resetPeriodTypeTouched(); setView("wizard"); };
   // Borradores: entra directo al primer paso que le falte algo, no
   // siempre al 1. Los "devuelto" no pasan por acá — ver InformesInicio,
   // esos abren el modal de corrección sin pasos.
-  const openReport = (r) => {
+  // Viendo "Todos", cada fila puede ser de un rol distinto al que ya
+  // está cargado en "config" — se trae el correcto antes de abrir, sin
+  // tocar "selectedRole" (eso dispararía "load" de nuevo y volvería a
+  // "inicio" antes de tiempo — ver editingRole arriba).
+  const openReport = async (r) => {
+    const cfg = await getConfigForRole(r.role);
+    setConfig(cfg);
+    setEditingRole(r.role);
     const d = fromServer(r);
     setDraft(d);
-    setStep(firstIncompleteStep(config, d));
+    setStep(firstIncompleteStep(cfg, d));
     setNotice(""); setError(""); setConfirmingSubmit(false); resetPeriodTypeTouched(); setView("wizard");
   };
 
@@ -1429,7 +1495,7 @@ export default function MiInformeTab() {
     try {
       const statSources = config.statFields.filter((f) => f.sourceType);
       if (statSources.length) {
-        const summary = await api.getAttentionSummary({ role: effectiveRole, periodStart: draft.periodStart, periodEnd: draft.periodEnd, granularity: "mensual" });
+        const summary = await api.getAttentionSummary({ role: editingRole, periodStart: draft.periodStart, periodEnd: draft.periodEnd, granularity: "mensual" });
         setDraft((d) => {
           const stats = { ...d.stats };
           for (const f of statSources) stats[f.key] = summary[f.sourceType]?.count ?? 0;
@@ -1439,7 +1505,7 @@ export default function MiInformeTab() {
       for (const f of (config.monthlyFields || [])) {
         if (!f.sourceType) continue;
         const granularity = getSeries(f.key).granularity || "mensual";
-        const summary = await api.getAttentionSummary({ role: effectiveRole, periodStart: draft.periodStart, periodEnd: draft.periodEnd, granularity });
+        const summary = await api.getAttentionSummary({ role: editingRole, periodStart: draft.periodStart, periodEnd: draft.periodEnd, granularity });
         const rows = (summary[f.sourceType]?.series || []).map((s) => ({ label: formatBucketLabel(s.bucket, granularity), value: s.value }));
         setDraft((d) => ({ ...d, stats: { ...d.stats, [f.key]: { granularity, rows } } }));
       }
@@ -1452,7 +1518,7 @@ export default function MiInformeTab() {
   };
 
   const buildPayload = () => ({
-    ...(canManageAllRoles && { role: effectiveRole }),
+    ...(canManageAllRoles && { role: editingRole }),
     periodType: draft.periodType, periodStart: draft.periodStart, periodEnd: draft.periodEnd,
     stats: cleanStats(config, draft.stats), narrative: draft.narrative,
   });
@@ -1536,6 +1602,7 @@ export default function MiInformeTab() {
         onChange={(e) => { setSelectedRole(e.target.value); setView("inicio"); }}
         style={{ padding: "7px 12px", border: "1.5px solid #d0d7de", borderRadius: 7, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}
       >
+        {availableRoles.length > 1 && <option value={ALL_ROLES_VALUE}>Todos</option>}
         {availableRoles.map((r) => <option key={r.name} value={r.name}>{r.label}</option>)}
       </select>
     </div>
@@ -1552,7 +1619,7 @@ export default function MiInformeTab() {
     );
   }
 
-  if (!config) {
+  if (!config && !viewingAll) {
     return (
       <div>
         {roleSelector}
@@ -1569,7 +1636,8 @@ export default function MiInformeTab() {
       <div>
         {roleSelector}
         <InformesInicio
-          reports={reports} config={config} roleLabel={roleLabel} onOpen={openReport} onNew={openNew}
+          reports={reports} config={config} roleLabel={roleLabel} roleLabelOf={roleLabelOf} getConfigForRole={getConfigForRole} viewingAll={viewingAll}
+          onOpen={openReport} onNew={openNew}
           canManageAllRoles={canManageAllRoles} effectiveRole={effectiveRole} onReload={load} siteName={siteName}
           onViewDocuments={() => setView("documentos")}
         />
@@ -1627,7 +1695,7 @@ export default function MiInformeTab() {
           </div>
         )}
 
-        {canAccept && draft.status === "enviado" && (
+        {canAccept && (draft.status === "enviado" || draft.status === "en_revision") && (
           <ReviewPanel reportId={draft.id} onDone={reloadDraftAfterReview} />
         )}
 
